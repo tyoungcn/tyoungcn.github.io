@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.0.6" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16-next.png?v=6.0.6">
+
+
+  <link rel="mask-icon" href="/logo.svg?v=6.0.6" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.0.6',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '65YBN7EK61',
+      apiKey: '249c071ab47e1ab1c0d5c9c8930a9aba',
+      indexName: 'db.tyoung.me',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="软件介绍pt-table-checksum是Percona Toolkit工具系列中的一个，可以用来检测MySQL主、从数据的一致性。其原理是，在主库执行校验语句（binlog格式为STATEMENT），通过复制传递到从库，如果数据不一致，则主、从会产生不同的校验值，以此来判断主从数据是否一致。">
+<meta name="keywords" content="MySQL,Percona Toolkit,pt-table-checksum,主从一致性校验">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pt-table-checksum使用方法及主从一致性校验">
+<meta property="og:url" content="https://db.tyoung.me/2016/09/usage_of_pt-table-checksum_and_replication_consistency_check/index.html">
+<meta property="og:site_name" content="Tyoung&#39;s Blog">
+<meta property="og:description" content="软件介绍pt-table-checksum是Percona Toolkit工具系列中的一个，可以用来检测MySQL主、从数据的一致性。其原理是，在主库执行校验语句（binlog格式为STATEMENT），通过复制传递到从库，如果数据不一致，则主、从会产生不同的校验值，以此来判断主从数据是否一致。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2020-04-21T15:15:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="pt-table-checksum使用方法及主从一致性校验">
+<meta name="twitter:description" content="软件介绍pt-table-checksum是Percona Toolkit工具系列中的一个，可以用来检测MySQL主、从数据的一致性。其原理是，在主库执行校验语句（binlog格式为STATEMENT），通过复制传递到从库，如果数据不一致，则主、从会产生不同的校验值，以此来判断主从数据是否一致。">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Tyoung's Blog" type="application/atom+xml">
+
+
+
+
+  <link rel="canonical" href="https://db.tyoung.me/2016/09/usage_of_pt-table-checksum_and_replication_consistency_check/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>pt-table-checksum使用方法及主从一致性校验 | Tyoung's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"> 
+
+<div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Tyoung's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">DBA之路</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+          
+  <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives</a>
+</li>
+
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  
+  <div class="algolia-popup popup search-popup">
+    <div class="algolia-search">
+      <div class="algolia-search-input-icon">
+        <i class="fa fa-search"></i>
+      </div>
+      <div class="algolia-search-input" id="algolia-search-input"></div>
+    </div>
+
+    <div class="algolia-results">
+      <div id="algolia-stats"></div>
+      <div id="algolia-hits"></div>
+      <div id="algolia-pagination" class="algolia-pagination"></div>
+    </div>
+
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+  </div>
+
+
+
+
+    </div>
+  
+</nav>
+
+
+  
+
+
+
+ </div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://db.tyoung.me/2016/09/usage_of_pt-table-checksum_and_replication_consistency_check/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Tyoung">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/static/other_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Tyoung's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">pt-table-checksum使用方法及主从一致性校验</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2016-09-19T22:43:41+08:00">2016-09-19</time>
+            
+
+            
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/09/usage_of_pt-table-checksum_and_replication_consistency_check/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/09/usage_of_pt-table-checksum_and_replication_consistency_check/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="软件介绍"><a href="#软件介绍" class="headerlink" title="软件介绍"></a>软件介绍</h1><p>pt-table-checksum是Percona Toolkit工具系列中的一个，可以用来检测MySQL主、从数据的一致性。<br>其原理是，在主库执行校验语句（binlog格式为STATEMENT），通过复制传递到从库，如果数据不一致，则主、从会产生不同的校验值，以此来判断主从数据是否一致。</p>
+<a id="more"></a>
+<h1 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h1><ul>
+<li>pt-table-checksum将每个表切分成多个块（chunks），每个块包含多行数据，每次仅对一个块进行校验。</li>
+<li>它可以根据参数指定的每个块的校验执行时间，将表分成不同大小的块。</li>
+<li>将单个表切分成多个块进行校验，可以保证不会引起从库太大的延迟，也不会对服务器负载造成太大干扰。默认的每个块的校验执行时间是0.5s。</li>
+<li>pt-table-checksum会持续跟踪服务器执行校验语句的时间，并且会随着服务器性能的变化，来动态调整分块的大小。</li>
+<li>将表分块时，需要使用索引（优先使用主键或唯一键）。如果表没有索引，且表的行数量较小时，pt-table-checksum会将整个表作为一个数据块进行校验。</li>
+<li>pt-table-checksum会持续监控从库状态，如果从库复制延迟太大，校验会暂停，以等待从库追上主库。如果从库发生错误，或者复制停止，它也会暂停及等待。</li>
+<li>pt-table-checksum对于校验过程中产生的错误是有复原能力的。如果正在执行校验的SQL被kill掉，这对pt-table-checksum来说不是一个致命的错误，它会重新执行被kill掉的查询语句；如果再次失败，则会跳过，继续进行表的下一个分块的校验。<br>当出现锁等待超时的时候，也会进行相同的重试行为，同时输出警告信息。<br>如果连接服务器失败，pt-table-checksum也会进行重连和继续进行校验。</li>
+<li>当在运行的过程中被完全终止后，可以使用<code>--resume</code>参数，继续从上次终止时正在处理的表的当前分块开始，继续校验。<br>我们也可以使用<code>CTRL-C</code>按键来停止校验，pt-table-checksum会在完成对当前正在处理的分块的校验后，正常退出。之后我们也可以启动程序继续进行校验。</li>
+<li>当pt-table-checksum完成对一个表的所有分块的校验后，它会暂停并等待所有检测到的从库执行完这个表的校验语句。一旦从库执行完成，它会比对主、从的校验结果是否一致，并输出一行结果。</li>
+</ul>
+<h1 id="使用限制"><a href="#使用限制" class="headerlink" title="使用限制"></a>使用限制</h1><ul>
+<li>pt-table-checksum要求复制是基于STATEMENT格式的，并且它在运行时会在主库上设置<code>binlog_format=STATEMENT</code>，但是由于MySQL的限制，这一设置并不会传递到从库。<br>因此当从库的binlog格式是ROW格式时，无法直接对从库的从库进行校验。<br>pt-table-checksum会自动检测所有服务器的<code>binlog_format</code>，可以通过参数<code>--[no]check-binlog-format</code>来指定检测与否。</li>
+<li>pt-table-checksum假设主从的数据库和表结构都是一致的。<br>如果主库上的库不存在于从库上，或者从库的表结构与主库不一致，将会导致主从复制中断。</li>
+</ul>
+<h1 id="输出"><a href="#输出" class="headerlink" title="输出"></a>输出</h1><p>pt-table-checksum的输出有两种格式：带<code>--replicate-check-only</code>参数和正常不带这个参数时，输出结果的格式是不同的。</p>
+<h2 id="不带-replicate-check-only参数的输出"><a href="#不带-replicate-check-only参数的输出" class="headerlink" title="不带--replicate-check-only参数的输出"></a>不带<code>--replicate-check-only</code>参数的输出</h2><p>pt-table-checksum在完成校验后会以表格形式输出结果，每个表的校验结果为一行输出，每完成校验一张表会输出一行校验结果。</p>
+<p>输出格式如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">            TS ERRORS  DIFFS     ROWS  CHUNKS SKIPPED    TIME TABLE</span><br><span class="line">09-12T10:34:38      0      0        1       1       0   0.059 road_to_dba.names</span><br><span class="line">09-12T10:34:38      0      0        5       1       0   0.016 road_to_dba.t_bigint</span><br></pre></td></tr></table></figure></p>
+<p>各列的含义如下：</p>
+<ul>
+<li>TS<br>pt-table-checksum完成该表的校验时的时间。</li>
+<li>ERRORS<br>在校验表的过程中出现的错误和警告的数量。<br>错误和警告信息在校验的过程中会以标准错误的形式输出。</li>
+<li>DIFFS<br>主库数据与一个（或多个）从库数据不一致的分块的数量。<br>当指定<code>--no-replicate-check</code>时，该值始终为0。当指定<code>--replicate-check-only</code>时，只输出数据不一致的表的校验结果。</li>
+<li>ROWS<br>查询和校验的表的行数。</li>
+<li>CHUNKS<br>表被分成的分块的数量。</li>
+<li>SKIPPED<br>校验表时，跳过的分块的数量。<br>数据分块被跳过可能由以下问题引起：<ul>
+<li>MySQL没有使用<code>--chunk-index</code>指定的索引；</li>
+<li>通过分析执行计划（<code>--[no]check-plan</code>）检测到MySQL没有使用全部的表分块使用的索引；</li>
+<li>数据分块的大小大于<code>--chunk-size * --chunk-size-limit</code>；</li>
+<li>锁等待超时（重试的次数大于<code>--retries</code>指定的值）；</li>
+<li>校验的查询语句被kill掉（重试的次数大于<code>--retries</code>指定的值）</li>
+</ul>
+</li>
+<li>TIME<br>表的校验执行时长。</li>
+<li>TABLE<br>校验的表名（含库名）。</li>
+</ul>
+<h2 id="带-replicate-check-only参数的输出"><a href="#带-replicate-check-only参数的输出" class="headerlink" title="带--replicate-check-only参数的输出"></a>带<code>--replicate-check-only</code>参数的输出</h2><p>如果指定了<code>--replicate-check-only</code>参数，则只会输出校验结果不一致的从库数据。<br>输出结果的格式为：每一个从库为一个段落，每一个校验结果不同的分块占一行，各列值之间以空格分隔。如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Differences on node601</span><br><span class="line">TABLE CHUNK CNT_DIFF CRC_DIFF CHUNK_INDEX LOWER_BOUNDARY UPPER_BOUNDARY</span><br><span class="line">road_to_dba.tbl1 1 0 1 PRIMARY 1 100</span><br><span class="line">road_to_dba.tbl1 6 0 1 PRIMARY 501 600</span><br><span class="line"></span><br><span class="line">Differences on node603</span><br><span class="line">TABLE CHUNK CNT_DIFF CRC_DIFF CHUNK_INDEX LOWER_BOUNDARY UPPER_BOUNDARY</span><br><span class="line">road_to_dba.tbl1 1 0 1 PRIMARY 1 100</span><br><span class="line">road_to_dba.tbl2 9 5 0 PRIMARY 101 200</span><br></pre></td></tr></table></figure></p>
+<p>输出的每个段落的第一行表示校验结果与主库不一致的从库的信息。<br>各列的含义如下：</p>
+<ul>
+<li>TABLE<br>与主库数据不一致的表的名称（包含库名）。</li>
+<li>CHUNK<br>表中与主库数据不一致的分块号。</li>
+<li>CNT_DIFF<br><code>从库的分块的行数量</code>减去<code>主库的分块的行数量</code>的差值。</li>
+<li>CRC_DIFF<br>如果从库分块的CRC校验值与主库的不同，则为1；否则，为0。</li>
+<li>CHUNK_INDEX<br>将表进行分块所使用的索引。</li>
+<li>LOWER_BOUNDARY<br>分块的下边界所使用的索引值。</li>
+<li>UPPER_BOUNDARY<br>分块的上边界所使用的索引值。</li>
+</ul>
+<h1 id="退出状态码"><a href="#退出状态码" class="headerlink" title="退出状态码"></a>退出状态码</h1><p>pt-table-checksum的退出状态码有3种值：<code>0</code>，<code>255</code>，<code>其他的位掩码值</code>。</p>
+<ul>
+<li><code>0</code>表示没有校验过程中没有任何错误出现。即，没有错误、警告、不同的校验值、跳过数据分块或表等。</li>
+<li><code>255</code>表示数据校验出现严重错误。也就是说，校验的进程终止或崩溃了。错误信息作为标准错误（<code>STDERR</code>）输出。</li>
+<li>如果退出状态码不是0或255，各个位掩码值表示的含义如下：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">  FLAG              BIT VALUE  MEANING</span><br><span class="line">  ================  =========  ==========================================</span><br><span class="line">  ERROR                     1  出现了一个不严重的错误</span><br><span class="line">  ALREADY_RUNNING           2  --pid选项指定的文件已存在，并且对应的PID在运行中</span><br><span class="line">  CAUGHT_SIGNAL             4  Caught SIGHUP, SIGINT, SIGPIPE, or SIGTERM</span><br><span class="line">  NO_SLAVES_FOUND           8  没有检测到从库或集群节点</span><br><span class="line">  TABLE_DIFF               16  本次校验至少有一个分块的数据不同</span><br><span class="line">  SKIP_CHUNK               32  至少有一个数据分块被跳过</span><br><span class="line">  SKIP_TABLE               64  至少有一个表被跳过</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h1 id="常用参数"><a href="#常用参数" class="headerlink" title="常用参数"></a>常用参数</h1><h2 id="–ask-pass"><a href="#–ask-pass" class="headerlink" title="–ask-pass"></a>–ask-pass</h2><p>通过提示输入密码，而不是在命令行指定密码。</p>
+<h2 id="–-no-check-binlog-format"><a href="#–-no-check-binlog-format" class="headerlink" title="–[no]check-binlog-format"></a>–[no]check-binlog-format</h2><p>默认：<code>yes</code><br>检查binlog格式。<br>如果binlog格式不是STATEMENT，需要指定<code>--no-check-binlog-format</code>，如果不指定此项，会报错。</p>
+<h2 id="–-no-check-replication-filters"><a href="#–-no-check-replication-filters" class="headerlink" title="–[no]check-replication-filters"></a>–[no]check-replication-filters</h2><p>默认：<code>yes</code><br>pt-table-checksum会检查复制过滤相关的参数，例如，<code>binlog_ignore_db</code>，<code>replicate_do_db</code>等。如果检测到已配置任何复制过滤参数，它将会终止校验，并输出错误信息。</p>
+<p>如果只是校验指定的数据库或表，且没有被复制过滤掉，则可以指定<code>--no-check-replication-filters</code>来进行数据校验。<br>如果被校验的表在主库存在，但是在从库被复制过滤掉了，则会导致复制中断卡住。</p>
+<h2 id="–chunk-time"><a href="#–chunk-time" class="headerlink" title="–chunk-time"></a>–chunk-time</h2><p>值类型：浮点数<br>默认：<code>0.5</code>(s)<br>根据这个时间来动态的调整数据分块的大小，以使每个分块的校验执行时间不超过此值。</p>
+<h2 id="–databases"><a href="#–databases" class="headerlink" title="–databases"></a>–databases</h2><p>缩写形式：<code>-d</code><br>指定需要校验的数据库，多个库以逗号分隔。</p>
+<h2 id="–databases-regex"><a href="#–databases-regex" class="headerlink" title="–databases-regex"></a>–databases-regex</h2><p>使用正则表达式的形式来指定需要校验的数据库。</p>
+<h2 id="–host"><a href="#–host" class="headerlink" title="–host"></a>–host</h2><p>缩写形式：<code>-h</code><br>值类型：字符串<br>默认：<code>localhost</code></p>
+<p>需要连接的服务器的主机地址。</p>
+<h2 id="–ignore-databases"><a href="#–ignore-databases" class="headerlink" title="–ignore-databases"></a>–ignore-databases</h2><p>指定需要忽略校验的数据库，多个库以逗号分隔。</p>
+<h2 id="–ignore-databases-regex"><a href="#–ignore-databases-regex" class="headerlink" title="–ignore-databases-regex"></a>–ignore-databases-regex</h2><p>值类型：字符串<br>以正则表达式的形式指定需要忽略的数据库。</p>
+<h2 id="–ignore-tables"><a href="#–ignore-tables" class="headerlink" title="–ignore-tables"></a>–ignore-tables</h2><p>指定需要忽略校验的表，多个表名以逗号分隔。表名前面可以指定数据库名。<br><code>--replicate</code>选项指定的表，始终会被忽略掉。</p>
+<h2 id="–ignore-tables-regex"><a href="#–ignore-tables-regex" class="headerlink" title="–ignore-tables-regex"></a>–ignore-tables-regex</h2><p>以正则表达式的形式指定需要忽略校验的表。</p>
+<h2 id="–password"><a href="#–password" class="headerlink" title="–password"></a>–password</h2><p>缩写形式：<code>-p</code><br>数据库连接的密码，如果密码包括逗号（<code>,</code>），则必须使用反斜杠。</p>
+<h2 id="–port"><a href="#–port" class="headerlink" title="–port"></a>–port</h2><p>缩写形式：<code>-P</code><br>数据库连接的端口。</p>
+<h2 id="–recursion-method"><a href="#–recursion-method" class="headerlink" title="–recursion-method"></a>–recursion-method</h2><p>默认：<code>processlist,hosts</code><br>指定搜索从库的递归方法。当pt-table-checksum无法搜索到从库时，其可以正常的进行数据校验，但是无法直接检测从库数据与主库是否一致。<br>如果搜索不到从库，可以尝试指定其他的递归方法，或者使用dsn来指定需要检测的从库。</p>
+<p>允许的方法有：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">METHOD       USES</span><br><span class="line">===========  =============================================</span><br><span class="line">processlist  SHOW PROCESSLIST</span><br><span class="line">hosts        SHOW SLAVE HOSTS</span><br><span class="line">cluster      SHOW STATUS LIKE <span class="string">'wsrep\_incoming\_addresses'</span></span><br><span class="line">dsn=DSN      DSNs from a table</span><br><span class="line">none         Do not find slaves</span><br></pre></td></tr></table></figure></p>
+<p>详细可参考官方文档：<a href="https://www.percona.com/doc/percona-toolkit/2.2/pt-table-checksum.html#cmdoption-pt-table-checksum--recursion-method" target="_blank" rel="noopener">https://www.percona.com/doc/percona-toolkit/2.2/pt-table-checksum.html#cmdoption-pt-table-checksum--recursion-method</a></p>
+<h2 id="–replicate"><a href="#–replicate" class="headerlink" title="–replicate"></a>–replicate</h2><p>默认：<code>percona.checksums</code><br>将校验结果写入到指定的库和表中。</p>
+<blockquote>
+<p>本文后续所说的<strong>校验信息表</strong>即指该表。</p>
+</blockquote>
+<p>表结构如下：<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> checksums (</span><br><span class="line">   db             <span class="built_in">CHAR</span>(<span class="number">64</span>)     <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">   tbl            <span class="built_in">CHAR</span>(<span class="number">64</span>)     <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">   <span class="keyword">chunk</span>          <span class="built_in">INT</span>          <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">   chunk_time     <span class="built_in">FLOAT</span>            <span class="literal">NULL</span>,</span><br><span class="line">   chunk_index    <span class="built_in">VARCHAR</span>(<span class="number">200</span>)     <span class="literal">NULL</span>,</span><br><span class="line">   lower_boundary <span class="built_in">TEXT</span>             <span class="literal">NULL</span>,</span><br><span class="line">   upper_boundary <span class="built_in">TEXT</span>             <span class="literal">NULL</span>,</span><br><span class="line">   this_crc       <span class="built_in">CHAR</span>(<span class="number">40</span>)     <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">   this_cnt       <span class="built_in">INT</span>          <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">   master_crc     <span class="built_in">CHAR</span>(<span class="number">40</span>)         <span class="literal">NULL</span>,</span><br><span class="line">   master_cnt     <span class="built_in">INT</span>              <span class="literal">NULL</span>,</span><br><span class="line">   ts             <span class="built_in">TIMESTAMP</span>    <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="keyword">CURRENT_TIMESTAMP</span> <span class="keyword">ON</span> <span class="keyword">UPDATE</span> <span class="keyword">CURRENT_TIMESTAMP</span>,</span><br><span class="line">   PRIMARY <span class="keyword">KEY</span> (db, tbl, <span class="keyword">chunk</span>),</span><br><span class="line">   <span class="keyword">INDEX</span> ts_db_tbl (ts, db, tbl)</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8;</span><br></pre></td></tr></table></figure></p>
+<p><code>lower_boundary</code>和<code>upper_boundary</code>列的类型可以设置为<code>BLOB</code>，详情参考<code>--binary-index</code>参数。</p>
+<p>默认情况下，<code>--[no]create-replicate-table</code>是开启的。因此，当<code>--replicate</code>指定的库和表不存在时，pt-table-checksum会自动创建这些库和表。</p>
+<p>如果用于校验的MySQL用户没有新建表的权限，则也可以在校验主从数据之前，使用上述表结构手动创建该表。</p>
+<p><code>--replicate</code>参数指定的表，在校验数据一致性时，默认是被忽略的。即，<code>--ignore-tables</code>参数会自动的包含该表。</p>
+<h2 id="–-no-replicate-check"><a href="#–-no-replicate-check" class="headerlink" title="–[no]replicate-check"></a>–[no]replicate-check</h2><p>默认：<code>yes</code><br>在校验完每一个表后，校验从库与主库的数据一致性。<br>pt-table-checksum会在所有检测到的从库上，执行一个简单的<code>SELECT</code>语句，来比较从库的校验值与主库的校验值是否一致。如果不一致，则将不一致的分块的数量，输出到<code>DIFFS</code>列。</p>
+<h2 id="–replicate-check-only"><a href="#–replicate-check-only" class="headerlink" title="–replicate-check-only"></a>–replicate-check-only</h2><p>如果指定此选项，pt-table-checksum不会校验任何表，而是使用上一次数据校验存储在<code>--replicate</code>指定的校验信息表的校验数据，来检测主从数据的一致性。<br>使用该选项时，只会输出校验结果不一致的表的信息。</p>
+<p>该选项只和<code>--[no]replicate-check</code>选项搭配使用。这两个选项配合起来可以做定时校验和监控。例如，使用cron任务定时校验主从数据时指定<code>--no-replicate-check</code>，然后再在Zabbix或Nagios监控时，指定<code>--replicate-check-only</code>来检测主从数据一致性。</p>
+<h2 id="–slave-user"><a href="#–slave-user" class="headerlink" title="–slave-user"></a>–slave-user</h2><p>值类型：字符串<br>连接从库时所使用的MySQL用户名。<br>当连接从库的用户名和主库不同时，可以使用此参数单独指定从库用户。</p>
+<h2 id="–slave-password"><a href="#–slave-password" class="headerlink" title="–slave-password"></a>–slave-password</h2><p>值类型：字符串<br>指定连接从库的密码，可以和参数<code>--slave-user</code>一起使用，并且所有从库的密码都必须是一样的。</p>
+<h2 id="–set-vars"><a href="#–set-vars" class="headerlink" title="–set-vars"></a>–set-vars</h2><p>值类型：array<br>设置MySQL变量值，每个变量值的形式为<code>variable=value</code>，多个变量以逗号分隔。<br>pt-table-checksum默认设置的变量值为：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wait_timeout=10000</span><br><span class="line">innodb_lock_wait_timeout=1</span><br></pre></td></tr></table></figure></p>
+<p>当无法设置变量值的时候，pt-table-checksum会输出相应的警告信息，并继续进行校验。</p>
+<h2 id="–socket"><a href="#–socket" class="headerlink" title="–socket"></a>–socket</h2><p>缩写形式：<code>-S</code><br>指定socket文件。</p>
+<h2 id="–tables"><a href="#–tables" class="headerlink" title="–tables"></a>–tables</h2><p>缩写形式：<code>-t</code><br>指定需要检查的表，多个表用逗号分隔。表名前面可以加上数据库的名称。</p>
+<h2 id="–tables-regex"><a href="#–tables-regex" class="headerlink" title="–tables-regex"></a>–tables-regex</h2><p>使用正则表达式的形式指定需要检查的表。</p>
+<h2 id="–user"><a href="#–user" class="headerlink" title="–user"></a>–user</h2><p>缩写形式：<code>-u</code></p>
+<p>指定连接的用户名。</p>
+<h2 id="–where"><a href="#–where" class="headerlink" title="–where"></a>–where</h2><p>只校验符合WHERE条件的数据。</p>
+<p>通常情况下，如果某个表每天只会往里面新增写入数据，则可以使用WHERE条件只校验昨天的数据，以加快校验速度。<br>如：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pt-table-checksum --<span class="built_in">where</span> <span class="string">"ts &gt; CURRENT_DATE - INTERVAL 1 DAY"</span></span><br></pre></td></tr></table></figure></p>
+<h1 id="其他参数"><a href="#其他参数" class="headerlink" title="其他参数"></a>其他参数</h1><h2 id="–binary-index"><a href="#–binary-index" class="headerlink" title="–binary-index"></a>–binary-index</h2><p>该参数选项和<code>--create-replicate-table</code>选项一起使用，使用该参数会将校验信息表的<code>lower_boundary</code>和<code>upper_boundary</code>列定义为<code>BLOB</code>类型。<br>如果被校验的表的索引包含binary数据类型，则需要使用选项。</p>
+<h2 id="–check-interval"><a href="#–check-interval" class="headerlink" title="–check-interval"></a>–check-interval</h2><p>值类型：时间<br>默认：<code>1</code><br>当发现从库的延迟时间超过<code>--max-lag</code>定义的时间后，需要休眠等待的时间。</p>
+<h2 id="–-no-check-plan"><a href="#–-no-check-plan" class="headerlink" title="–[no]check-plan"></a>–[no]check-plan</h2><p>默认：<code>yes</code><br>在执行查询语句之前使用<code>EXPLAIN</code>检查执行计划，以保证校验工作的安全性。<br>查询语句包括确定表数据分块的上下边界的语句，和查询分块的语句。如果MySQL将使用一个糟糕的执行计划，pt-table-checksum会跳过这个分块。</p>
+<h2 id="–check-slave-lag"><a href="#–check-slave-lag" class="headerlink" title="–check-slave-lag"></a>–check-slave-lag</h2><p>值类型：字符串<br>指定需要检测复制延迟的从库，参数值是一个<code>DSN</code>，并且继承主库的属性和连接选项（<code>--port</code>、<code>--user</code>等）。<br>默认情况下，pt-table-checksum会监测所有从库的延迟。如果某些从库配置了延迟复制，则可以使用此参数指定只需要检测延迟的从库，以忽略那些配置了复制延迟的从库。</p>
+<h2 id="–-no-check-slave-tables"><a href="#–-no-check-slave-tables" class="headerlink" title="–[no]check-slave-tables"></a>–[no]check-slave-tables</h2><p>默认：<code>yes</code><br>检查主库的表存在于从库上，且具有<code>--columns</code>选项指定的所有的列。<br>如果从库上不存在某些表，或者缺少某些列，在校验数据一致性的时候，pt-table-checksum将会导致复制中断。<br>如果确定从库的表和列都和主库的一样，则可以禁用此项。</p>
+<h2 id="–chunk-index"><a href="#–chunk-index" class="headerlink" title="–chunk-index"></a>–chunk-index</h2><p>值类型：字符串<br>指定将表进行分块所使用的索引。<br>默认情况下，pt-table-checksum会自动选择最合适的索引来对表进行分块。使用此选项可以使用指定的索引。如果指定的索引不存在，则pt-table-checksum会使用其默认的行为来选择索引。<br>建议在校验单表数据时可以使用此参数，而不要在校验整个服务器的数据时使用此参数。</p>
+<h2 id="–chunk-index-columns"><a href="#–chunk-index-columns" class="headerlink" title="–chunk-index-columns"></a>–chunk-index-columns</h2><p>值类型：整数<br>和参数<code>--chunk-index</code>一起使用，指定只使用指定（复合）索引的最左边的几列。</p>
+<h2 id="–chunk-size"><a href="#–chunk-size" class="headerlink" title="–chunk-size"></a>–chunk-size</h2><p>默认：<code>1000</code><br>每一个数据分块的行数。允许的后缀有：<code>k</code>，<code>M</code>，<code>G</code>。<br>推荐在大多数情况下，不要使用此参数，而是使用<code>--chunk-time</code>参数。</p>
+<p>使用该参数可能会引起一个问题：</p>
+<blockquote>
+<p>如果分块所使用的索引不是唯一的，则可能导致分块的行数比实际指定的要大得多。<br>例如，一个分块使用索引可以检索到的行数为10000，则使用该索引的WHERE语句是无法正好匹配1000条记录的，那么这个分块就会包含10000行记录。<br>这样的分块，很可能会由于超过<code>--chunk-size-limit</code>的限制而被跳过。</p>
+</blockquote>
+<h2 id="–chunk-size-limit"><a href="#–chunk-size-limit" class="headerlink" title="–chunk-size-limit"></a>–chunk-size-limit</h2><p>值类型：浮点数<br>默认：<code>2.0</code><br>指定分块的行数最多可以超过<code>--chunk-size</code>参数指定的行数的多少倍。</p>
+<p>pt-table-checksum使用<code>EXPLAIN</code>来估算分块的行数。如果这个估算值超过了<code>--chunk-size</code>参数值的某个倍数（由<code>--chunk-size-limit</code>定义），则分块会被跳过。</p>
+<p>最小值是1，表示分块的行数不能超过<code>--chunk-size</code>指定的值。由于分块的行数是估算的，所以不建议指定为1。<br>当参数值为0时，则不会检查是否超过指定的行数。</p>
+<h2 id="–columns"><a href="#–columns" class="headerlink" title="–columns"></a>–columns</h2><p>缩写形式：<code>-c</code><br>值类型：array<br>多个列以逗号分隔。只校验这些列。如果一个表不包含该选项指定的任何一列，则会被跳过。<br>该选项对所有的表有效，所以一般在进行单表校验时，指定此选项才是有意义的，除非被校验的多个表具有相同的列。</p>
+<h2 id="–config"><a href="#–config" class="headerlink" title="–config"></a>–config</h2><p>值类型：array<br>指定配置文件，多个值以逗号分隔。<br>如果使用该参数，该选项必须放在第一个位置。</p>
+<h2 id="–-no-create-replicate-table"><a href="#–-no-create-replicate-table" class="headerlink" title="–[no]create-replicate-table"></a>–[no]create-replicate-table</h2><p>默认：<code>yes</code><br>如果<code>--replicate</code>选项指定的数据库和表不存在，则创建该库和表。表结构与<code>--replicate</code>选项下提到的表结构一样。</p>
+<h2 id="–defaults-file"><a href="#–defaults-file" class="headerlink" title="–defaults-file"></a>–defaults-file</h2><p>缩写形式：<code>-F</code><br>只从给定的文件读取MySQL的参数。必须使用绝对路径来指定。</p>
+<h2 id="–-no-empty-replicate-table"><a href="#–-no-empty-replicate-table" class="headerlink" title="–[no]empty-replicate-table"></a>–[no]empty-replicate-table</h2><p>默认：<code>yes</code><br>在校验每个表之前，删除之前存在校验信息表的该表的校验数据。</p>
+<p>该选项不会TRUNCATE整个表，而只是在校验每个表之前，删除该表相关的校验数据。<br>如果使用<code>--resume</code>选项从之前的一个校验继续执行校验，则重新开始校验时所在的那张表的校验数据不会被清除掉。</p>
+<h2 id="–engines"><a href="#–engines" class="headerlink" title="–engines"></a>–engines</h2><p>缩写形式：<code>-e</code><br>指定需要校验的表的存储引擎。</p>
+<h2 id="–explain"><a href="#–explain" class="headerlink" title="–explain"></a>–explain</h2><p>可以多次使用该参数选项。默认是0次。<br>输出当前数据校验的查询语句，但不执行。该选项会使<code>--[no]empty-replicate-table</code>选项无效。<br>当使用该参数一次时，会输出表的校验查询语句（不含具体的上下边界值）。<br>当使用该参数两次时，会迭代的调用数据分块算法，输出表的每一个分块的上、下边界值，但是不会执行这些校验查询语句。</p>
+<h2 id="–float-precision"><a href="#–float-precision" class="headerlink" title="–float-precision"></a>–float-precision</h2><p>值类型：整数<br><code>FLOAT</code>和<code>DOUBLE</code>类型转换成字符串时的精度。<br>指定浮点数被四舍五入（<code>ROUND()</code>）转换成字符串时，小数点后保留的数字的个数。<br>默认情况下，浮点数没有被四舍五入，而是被使用<code>CONCAT()</code>函数转换成字符串。</p>
+<h2 id="–function"><a href="#–function" class="headerlink" title="–function"></a>–function</h2><p>值类型：字符串<br>校验时使用的hash函数，包括<code>FNV1A_64</code>、<code>MURMUR_HASH</code>、<code>SHA1</code>、<code>MD5</code>、<code>CRC32</code>等。<br>默认的是<code>CRC32</code>。</p>
+<h2 id="–help"><a href="#–help" class="headerlink" title="–help"></a>–help</h2><p>显示帮助信息。</p>
+<h2 id="–ignore-columns"><a href="#–ignore-columns" class="headerlink" title="–ignore-columns"></a>–ignore-columns</h2><p>指定需要忽略校验的列名，多个列以逗号分隔。<br>如果一个表的所有列都在<code>--ignore-columns</code>指定忽略的列中，则会跳过该表。</p>
+<h2 id="–ignore-engines"><a href="#–ignore-engines" class="headerlink" title="–ignore-engines"></a>–ignore-engines</h2><p>默认：<code>FEDERATED,MRG_MyISAM</code><br>指定需要忽略校验的存储引擎，多个值以逗号分隔。</p>
+<h2 id="–max-lag"><a href="#–max-lag" class="headerlink" title="–max-lag"></a>–max-lag</h2><p>类型：时间<br>默认：<code>1s</code></p>
+<p>当发现从库的延迟超过该参数的值时，则会暂停校验，直至从库的延迟小于该值。<br>pt-table-checksum在校验完每一个分块后，都会检查所有检测到的从库的延迟（根据<code>Seconds_Behind_Master</code>判断）。如果延迟大于该值，则会休眠等待<code>--check-interval</code>定义的秒数，然后再次检查从库。<br>如果从库停止了，pt-table-checksum则会一直等待，直至从库重新启动。当从库重新启动且延迟不再大的时候，会继续进行校验。</p>
+<h2 id="–max-load"><a href="#–max-load" class="headerlink" title="–max-load"></a>–max-load</h2><p>值类型：array<br>默认：<code>Threads_running=25</code><br>在校验完每一个分块后，执行<code>SHOW GLOBAL STATUS</code>，检查相关状态的值是否超过该选项定义的阈值。当超过阈值时，pt-table-checksum会暂停校验；当值低于阈值后，会继续进行校验。<br>该选项支持指定多个MySQL status变量（以逗号分隔），并为其分别指定阈值（可选的。形式：<code>=MAX_VALUE</code>或<code>:MAX_VALUE</code>）。如果没有指定阈值，则pt-table-checksum会将当前值增大20%，作为阈值。<br>例如，可以指定<code>Threads_connected=110</code>，来限定当Threads_connected超过110时，则暂停校验。</p>
+<h2 id="–pid"><a href="#–pid" class="headerlink" title="–pid"></a>–pid</h2><p>创建指定的PID文件。</p>
+<h2 id="–progress"><a href="#–progress" class="headerlink" title="–progress"></a>–progress</h2><p>type：array<br>默认值：<code>time,30</code><br>每隔多久将执行的进度信息以标准错误输出（<code>STDERR</code>）。<br>该参数的值由两部分构成，以逗号分隔。第一部分的取值可以是：<code>percentage</code>，<code>time</code>，或者<code>iterations</code>；第二部分指定每隔多久进行一次信息输出：in percentage，seconds，或者number of iterations。<br>pt-table-checksum会对许多耗时的操作输出进度信息，包括等待从库赶上主库（从库延迟时）。</p>
+<h2 id="–quiet"><a href="#–quiet" class="headerlink" title="–quiet"></a>–quiet</h2><p>缩写形式：<code>-q</code><br>可以多次叠加使用该选项，默认未使用。使用该选项使pt-table-checksum只输出最重要的信息，并且会使选项<code>--progress</code>无效。<br>指定该参数一次，则只会输出错误、警告，和具有不同校验值的表。<br>指定该参数两次，则只会输出错误信息。在这种情况下，可以使用退出状态码来判断是否有警告或者不同的校验值。</p>
+<h2 id="–recurse"><a href="#–recurse" class="headerlink" title="–recurse"></a>–recurse</h2><p>值类型：整数<br>在主从结构中，递归搜索从库的层数。<br>默认是无限的。</p>
+<h2 id="–replicate-check-retries"><a href="#–replicate-check-retries" class="headerlink" title="–replicate-check-retries"></a>–replicate-check-retries</h2><p>值类型：整数<br>默认：<code>1</code><br>当发现某个表的校验结果不一致时，对该表进行重复校验的次数。只有当经过这些次数的校验后，还存在的不一致的校验信息才作为最终的结果。</p>
+<p>使用这个参数，是为了解决使用<code>-–resume</code>参数而导致的虚假的主从不一致信息。当该参数值为2或者更大时，基本可以消除这些虚假的主从不一致信息。<br>详情可以参考以下链接：</p>
+<ul>
+<li>Bug #1311654: <a href="https://bugs.launchpad.net/percona-toolkit/+bug/1311654" target="_blank" rel="noopener">https://bugs.launchpad.net/percona-toolkit/+bug/1311654</a></li>
+</ul>
+<h2 id="–replicate-database"><a href="#–replicate-database" class="headerlink" title="–replicate-database"></a>–replicate-database</h2><p>pt-table-checksum在进行数据校验时，执行的<code>USE database</code>语句始终使用该参数指定的数据库。<br>默认情况下，会将当前校验的表所在的库，作为<code>USE database</code>的库来执行。<br>使用该参数选项来避免复制过滤引起的问题（过滤参数如<code>binlog_ignore_db</code>，<code>replicate_ignore_db</code>等）。</p>
+<h2 id="–resume"><a href="#–resume" class="headerlink" title="–resume"></a>–resume</h2><p>在上一次校验中断后，使用此参数可以继续上一次的校验。该参数会禁用<code>--[no]empty-replicate-table</code>参数。<br>如果pt-table-checksum在校验完所有的表之前被终止了，则使用<code>--resume</code>参数再次启动pt-table-checksum时，会从上次校验的最后一个表的最后一个校验完成的分块开始校验。</p>
+<h2 id="–retries"><a href="#–retries" class="headerlink" title="–retries"></a>–retries</h2><p>值类型：整数<br>默认：<code>2</code></p>
+<p>当出现一个非致命的错误时，对该分块进行重试校验的次数。<br>非致命的错误包括锁等待超时、校验查询的SQL线程被kill了，等等。</p>
+<h2 id="–run-time"><a href="#–run-time" class="headerlink" title="–run-time"></a>–run-time</h2><p>值类型：时间<br>pt-table-checksum执行校验的总时长。<br>允许的时间后缀有：<code>s</code>（秒），<code>m</code>（分），<code>h</code>（时），<code>d</code>(天)。</p>
+<p>当校验很多表时，可以将该参数和<code>--resume</code>参数结合在一起使用。</p>
+<blockquote>
+<p>使用<code>--run-time</code>在指定分配的时间进行校验后退出，然后使用<code>--resume</code>参数在指定时间继续之前的校验。</p>
+</blockquote>
+<h2 id="–separator"><a href="#–separator" class="headerlink" title="–separator"></a>–separator</h2><p>值类型：字符串<br>默认：<code>#</code><br>定义函数<code>CONCAT_WS()</code>使用的分隔符。该参数定义的字符，用于在校验时连接各列的值。</p>
+<h2 id="–slave-skip-tolerance"><a href="#–slave-skip-tolerance" class="headerlink" title="–slave-skip-tolerance"></a>–slave-skip-tolerance</h2><p>值类型：浮点数<br>默认：<code>1.0</code></p>
+<p>当某个表在主库只被作为一个数据分块校验，而在从库的数据大小却超过了可接受的最大值时，该表会被跳过。由于表的行数是粗略估计的，在多数情况下，由于很小的主从数据差异而进行的表跳过是没有必要的。<br>该参数的定义可以减少这种不必要的跳过。<br>使用该参数可指定从库的行数超过主库的行数的最大的容忍值。<br>例如，当参数值为<code>1.2</code>时，表在从库的行数最多是主库的<strong>1.2</strong>倍。</p>
+<h2 id="–trim"><a href="#–trim" class="headerlink" title="–trim"></a>–trim</h2><p>对校验数据的<code>VARCHAR</code>列添加<code>TRIM()</code>函数。<br>MySQL 5.0之后的版本，<code>VARCHAR</code>列会保存字符串首尾的空格；但是MySQL 5.0之前的版本会移除这些空格。<br>指定该选项，可以移除<code>VARCHAR</code>列数据的首尾的空格。</p>
+<h2 id="–version"><a href="#–version" class="headerlink" title="–version"></a>–version</h2><p>显示程序的版本。</p>
+<h2 id="–-no-version-check"><a href="#–-no-version-check" class="headerlink" title="–[no]version-check"></a>–[no]version-check</h2><p>默认：<code>yes</code><br>自动的检查Percona Toolkit，MySQL，和其他程序的版本。<br>首先，pt-table-checksum会检查它自己和其他软件的版本，检查的软件如MySQL、Perl、Perl module DBD::mysql等等。然后，它会检查和输出这些软件版本的已知问题。</p>
+<h1 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h1><h2 id="用法"><a href="#用法" class="headerlink" title="用法"></a>用法</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pt-table-checksum [OPTIONS] [DSN]</span><br></pre></td></tr></table></figure>
+<h2 id="系统环境"><a href="#系统环境" class="headerlink" title="系统环境"></a>系统环境</h2><ul>
+<li>OS Version: CentOS 6</li>
+<li>DB Version: MySQL 5.6.29</li>
+<li>PT Version: pt-table-checksum 2.2.18</li>
+<li>主从环境:<br>主从端口相同，都是3376。<ul>
+<li>Master: 192.168.0.162:3376</li>
+<li>Slave1: 192.168.0.161:3376</li>
+</ul>
+</li>
+</ul>
+<h2 id="安装依赖软件"><a href="#安装依赖软件" class="headerlink" title="安装依赖软件"></a>安装依赖软件</h2><p>安装 Perl, DBI, DBD::mysql等<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; yum install perl perl-devel perl-Time-HiRes perl-DBI perl-DBD-MySQL perl-Digest-MD5</span><br></pre></td></tr></table></figure></p>
+<h2 id="安装Percona-Toolkit"><a href="#安装Percona-Toolkit" class="headerlink" title="安装Percona Toolkit"></a>安装Percona Toolkit</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; wget percona.com/get/percona-toolkit.tar.gz</span><br><span class="line">shell&gt; tar zxvf percona-toolkit.tar.gz</span><br><span class="line">shell&gt; <span class="built_in">cd</span> percona-toolkit-2.2.18</span><br><span class="line">shell&gt; ./bin/pt-table-checksum --version</span><br><span class="line">pt-table-checksum 2.2.18</span><br></pre></td></tr></table></figure>
+<h2 id="新建MySQL帐号"><a href="#新建MySQL帐号" class="headerlink" title="新建MySQL帐号"></a>新建MySQL帐号</h2><p>新建账号<code>pt_table_check</code>用于连接主库和从库进行校验：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; GRANT SELECT, PROCESS, SUPER, REPLICATION SLAVE ON *.* TO pt_table_check@'%' IDENTIFIED BY 'checksum123';</span><br><span class="line">mysql&gt; GRANT CREATE, INSERT, UPDATE, DELETE ON percona_schema.* TO pt_table_check@'%';</span><br></pre></td></tr></table></figure></p>
+<h2 id="执行数据校验"><a href="#执行数据校验" class="headerlink" title="执行数据校验"></a>执行数据校验</h2><p><strong>在主库上执行</strong></p>
+<p>校验表road_to_dba.t_int主从数据的一致性：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; ./bin/pt-table-checksum --socket=/tmp/mysql3376.sock --user=pt_table_check --password=<span class="string">'checksum123'</span> --tables=road_to_dba.t_int --no-check-binlog-format --replicate=percona_schema.checksums</span><br></pre></td></tr></table></figure></p>
+<p>结果：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">            TS ERRORS  DIFFS     ROWS  CHUNKS SKIPPED    TIME TABLE</span><br><span class="line">09-19T18:50:19      0      1        9       1       0   0.042 road_to_dba.t_int</span><br></pre></td></tr></table></figure></p>
+<p>可以从DIFFS列看出有一个数据分块的主从数据不一致。</p>
+<h2 id="查看差异汇总"><a href="#查看差异汇总" class="headerlink" title="查看差异汇总"></a>查看差异汇总</h2><p><strong>在从库执行</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; SELECT db, tbl, SUM(this_cnt) AS total_rows, COUNT(*) AS chunks</span><br><span class="line">FROM percona_schema.checksums</span><br><span class="line">WHERE (</span><br><span class="line"> master_cnt &lt;&gt; this_cnt</span><br><span class="line"> OR master_crc &lt;&gt; this_crc</span><br><span class="line"> OR ISNULL(master_crc) &lt;&gt; ISNULL(this_crc))</span><br><span class="line">GROUP BY db, tbl;</span><br><span class="line">+<span class="comment">-------------+-------+------------+--------+</span></span><br><span class="line">| db          | tbl   | total_rows | chunks |</span><br><span class="line">+<span class="comment">-------------+-------+------------+--------+</span></span><br><span class="line">| road_to_dba | t_int |         10 |      1 |</span><br><span class="line">+<span class="comment">-------------+-------+------------+--------+</span></span><br><span class="line">1 row in <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+<p>从以上查询结果可以看出：</p>
+<blockquote>
+<p>表road_to_dba.t_int总共有一个分块（<code>chunks</code>）的主从数据不一致。</p>
+</blockquote>
+<p>或者</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; SELECT * FROM percona_schema.checksums WHERE master_cnt &lt;&gt; this_cnt OR master_crc &lt;&gt; this_crc OR ISNULL(master_crc) &lt;&gt; ISNULL(this_crc);</span><br><span class="line">+<span class="comment">-------------+-------+-------+------------+-------------+----------------+----------------+----------+----------+------------+------------+---------------------+</span></span><br><span class="line">| db          | tbl   | chunk | chunk_time | chunk_index | lower_boundary | upper_boundary | this_crc | this_cnt | master_crc | master_cnt | ts                  |</span><br><span class="line">+<span class="comment">-------------+-------+-------+------------+-------------+----------------+----------------+----------+----------+------------+------------+---------------------+</span></span><br><span class="line">| road_to_dba | t_int |     1 |   0.000546 | NULL        | NULL           | NULL           | 2e1ed7d3 |       10 | 17818634   |          9 | 2016-09-19 18:50:19 |</span><br><span class="line">+<span class="comment">-------------+-------+-------+------------+-------------+----------------+----------------+----------+----------+------------+------------+---------------------+</span></span><br><span class="line">1 row in <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+<p>从以上查询可以看出：</p>
+<blockquote>
+<p>表road_to_dba.t_int的<code>分块1</code>的主从数据不一致。该分块在主库的行数（<code>master_cnt</code>）为<code>9</code>，在从库的行数（<code>this_cnt</code>）为<code>10</code>；该分块在主库的校验值（<code>master_crc</code>）为<code>17818634</code>，在从库的校验值（<code>this_crc</code>）为<code>2e1ed7d3</code>；</p>
+</blockquote>
+<h1 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h1><ul>
+<li>Percona官方文档：<a href="https://www.percona.com/doc/percona-toolkit/2.2/pt-table-checksum.html" target="_blank" rel="noopener">https://www.percona.com/doc/percona-toolkit/2.2/pt-table-checksum.html</a></li>
+</ul>
+
+      
+    </div>
+
+    
+      
+
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\09\use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum\" rel="bookmark">pt-table-checksum使用dsn方式连接检测从库</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\09\how_to_deal_with_xtrabackup_error_log_block_numbers_mismatch\" rel="bookmark">XtraBackup error：log block numbers mismatch分析处理</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\03\migrate_mysql_to_mariadb\" rel="bookmark">MySQL迁移到MariaDB</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/static/other_images/wechat_pay-tyoung.png" alt="Tyoung WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/static/other_images/alipay-tyoung.png" alt="Tyoung Alipay">
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author: </strong>Tyoung</li>
+  <li class="post-copyright-link">
+    <strong>Post link:</strong>
+    <a href="https://db.tyoung.me/2016/09/usage_of_pt-table-checksum_and_replication_consistency_check/" title="pt-table-checksum使用方法及主从一致性校验">https://db.tyoung.me/2016/09/usage_of_pt-table-checksum_and_replication_consistency_check/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+            <a href="/tags/Percona-Toolkit/" rel="tag"># Percona Toolkit</a>
+          
+            <a href="/tags/pt-table-checksum/" rel="tag"># pt-table-checksum</a>
+          
+            <a href="/tags/主从一致性校验/" rel="tag"># 主从一致性校验</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/09/how_to_deal_with_xtrabackup_error_log_block_numbers_mismatch/" rel="next" title="XtraBackup error：log block numbers mismatch分析处理">
+                <i class="fa fa-chevron-left"></i> XtraBackup error：log block numbers mismatch分析处理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/" rel="prev" title="pt-table-checksum使用dsn方式连接检测从库">
+                pt-table-checksum使用dsn方式连接检测从库 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/static/other_images/avatar.jpg" alt="Tyoung">
+            
+              <p class="site-author-name" itemprop="name">Tyoung</p>
+              <p class="site-description motion-element" itemprop="description">纸上得来终觉浅，绝知此事要躬行。</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">15</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/tyoungcn" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.linkedin.com/in/tyoungcn" target="_blank" title="LinkedIn"><i class="fa fa-fw fa-linkedin-square"></i>LinkedIn</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#软件介绍"><span class="nav-number">1.</span> <span class="nav-text">软件介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原理"><span class="nav-number">2.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用限制"><span class="nav-number">3.</span> <span class="nav-text">使用限制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#输出"><span class="nav-number">4.</span> <span class="nav-text">输出</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#不带-replicate-check-only参数的输出"><span class="nav-number">4.1.</span> <span class="nav-text">不带--replicate-check-only参数的输出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#带-replicate-check-only参数的输出"><span class="nav-number">4.2.</span> <span class="nav-text">带--replicate-check-only参数的输出</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#退出状态码"><span class="nav-number">5.</span> <span class="nav-text">退出状态码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#常用参数"><span class="nav-number">6.</span> <span class="nav-text">常用参数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#–ask-pass"><span class="nav-number">6.1.</span> <span class="nav-text">–ask-pass</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–-no-check-binlog-format"><span class="nav-number">6.2.</span> <span class="nav-text">–[no]check-binlog-format</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–-no-check-replication-filters"><span class="nav-number">6.3.</span> <span class="nav-text">–[no]check-replication-filters</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–chunk-time"><span class="nav-number">6.4.</span> <span class="nav-text">–chunk-time</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–databases"><span class="nav-number">6.5.</span> <span class="nav-text">–databases</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–databases-regex"><span class="nav-number">6.6.</span> <span class="nav-text">–databases-regex</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–host"><span class="nav-number">6.7.</span> <span class="nav-text">–host</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–ignore-databases"><span class="nav-number">6.8.</span> <span class="nav-text">–ignore-databases</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–ignore-databases-regex"><span class="nav-number">6.9.</span> <span class="nav-text">–ignore-databases-regex</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–ignore-tables"><span class="nav-number">6.10.</span> <span class="nav-text">–ignore-tables</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–ignore-tables-regex"><span class="nav-number">6.11.</span> <span class="nav-text">–ignore-tables-regex</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–password"><span class="nav-number">6.12.</span> <span class="nav-text">–password</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–port"><span class="nav-number">6.13.</span> <span class="nav-text">–port</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–recursion-method"><span class="nav-number">6.14.</span> <span class="nav-text">–recursion-method</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–replicate"><span class="nav-number">6.15.</span> <span class="nav-text">–replicate</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–-no-replicate-check"><span class="nav-number">6.16.</span> <span class="nav-text">–[no]replicate-check</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–replicate-check-only"><span class="nav-number">6.17.</span> <span class="nav-text">–replicate-check-only</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–slave-user"><span class="nav-number">6.18.</span> <span class="nav-text">–slave-user</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–slave-password"><span class="nav-number">6.19.</span> <span class="nav-text">–slave-password</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–set-vars"><span class="nav-number">6.20.</span> <span class="nav-text">–set-vars</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–socket"><span class="nav-number">6.21.</span> <span class="nav-text">–socket</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–tables"><span class="nav-number">6.22.</span> <span class="nav-text">–tables</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–tables-regex"><span class="nav-number">6.23.</span> <span class="nav-text">–tables-regex</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–user"><span class="nav-number">6.24.</span> <span class="nav-text">–user</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–where"><span class="nav-number">6.25.</span> <span class="nav-text">–where</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#其他参数"><span class="nav-number">7.</span> <span class="nav-text">其他参数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#–binary-index"><span class="nav-number">7.1.</span> <span class="nav-text">–binary-index</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–check-interval"><span class="nav-number">7.2.</span> <span class="nav-text">–check-interval</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–-no-check-plan"><span class="nav-number">7.3.</span> <span class="nav-text">–[no]check-plan</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–check-slave-lag"><span class="nav-number">7.4.</span> <span class="nav-text">–check-slave-lag</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–-no-check-slave-tables"><span class="nav-number">7.5.</span> <span class="nav-text">–[no]check-slave-tables</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–chunk-index"><span class="nav-number">7.6.</span> <span class="nav-text">–chunk-index</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–chunk-index-columns"><span class="nav-number">7.7.</span> <span class="nav-text">–chunk-index-columns</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–chunk-size"><span class="nav-number">7.8.</span> <span class="nav-text">–chunk-size</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–chunk-size-limit"><span class="nav-number">7.9.</span> <span class="nav-text">–chunk-size-limit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–columns"><span class="nav-number">7.10.</span> <span class="nav-text">–columns</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–config"><span class="nav-number">7.11.</span> <span class="nav-text">–config</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–-no-create-replicate-table"><span class="nav-number">7.12.</span> <span class="nav-text">–[no]create-replicate-table</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–defaults-file"><span class="nav-number">7.13.</span> <span class="nav-text">–defaults-file</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–-no-empty-replicate-table"><span class="nav-number">7.14.</span> <span class="nav-text">–[no]empty-replicate-table</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–engines"><span class="nav-number">7.15.</span> <span class="nav-text">–engines</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–explain"><span class="nav-number">7.16.</span> <span class="nav-text">–explain</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–float-precision"><span class="nav-number">7.17.</span> <span class="nav-text">–float-precision</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–function"><span class="nav-number">7.18.</span> <span class="nav-text">–function</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–help"><span class="nav-number">7.19.</span> <span class="nav-text">–help</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–ignore-columns"><span class="nav-number">7.20.</span> <span class="nav-text">–ignore-columns</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–ignore-engines"><span class="nav-number">7.21.</span> <span class="nav-text">–ignore-engines</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–max-lag"><span class="nav-number">7.22.</span> <span class="nav-text">–max-lag</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–max-load"><span class="nav-number">7.23.</span> <span class="nav-text">–max-load</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–pid"><span class="nav-number">7.24.</span> <span class="nav-text">–pid</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–progress"><span class="nav-number">7.25.</span> <span class="nav-text">–progress</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–quiet"><span class="nav-number">7.26.</span> <span class="nav-text">–quiet</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–recurse"><span class="nav-number">7.27.</span> <span class="nav-text">–recurse</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–replicate-check-retries"><span class="nav-number">7.28.</span> <span class="nav-text">–replicate-check-retries</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–replicate-database"><span class="nav-number">7.29.</span> <span class="nav-text">–replicate-database</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–resume"><span class="nav-number">7.30.</span> <span class="nav-text">–resume</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–retries"><span class="nav-number">7.31.</span> <span class="nav-text">–retries</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–run-time"><span class="nav-number">7.32.</span> <span class="nav-text">–run-time</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–separator"><span class="nav-number">7.33.</span> <span class="nav-text">–separator</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–slave-skip-tolerance"><span class="nav-number">7.34.</span> <span class="nav-text">–slave-skip-tolerance</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–trim"><span class="nav-number">7.35.</span> <span class="nav-text">–trim</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–version"><span class="nav-number">7.36.</span> <span class="nav-text">–version</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–-no-version-check"><span class="nav-number">7.37.</span> <span class="nav-text">–[no]version-check</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用示例"><span class="nav-number">8.</span> <span class="nav-text">使用示例</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#用法"><span class="nav-number">8.1.</span> <span class="nav-text">用法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#系统环境"><span class="nav-number">8.2.</span> <span class="nav-text">系统环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装依赖软件"><span class="nav-number">8.3.</span> <span class="nav-text">安装依赖软件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装Percona-Toolkit"><span class="nav-number">8.4.</span> <span class="nav-text">安装Percona Toolkit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#新建MySQL帐号"><span class="nav-number">8.5.</span> <span class="nav-text">新建MySQL帐号</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#执行数据校验"><span class="nav-number">8.6.</span> <span class="nav-text">执行数据校验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看差异汇总"><span class="nav-number">8.7.</span> <span class="nav-text">查看差异汇总</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文档"><span class="nav-number">9.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2015 &mdash; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-database"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Tyoung</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.0.6"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.0.6"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.0.6"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.0.6"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+    <script id="dsq-count-scr" src="https://tyoungcn.disqus.com/count.js" async></script>
+  
+
+  
+    <script type="text/javascript">
+      var disqus_config = function () {
+        this.page.url = 'https://db.tyoung.me/2016/09/usage_of_pt-table-checksum_and_replication_consistency_check/';
+        this.page.identifier = '2016/09/usage_of_pt-table-checksum_and_replication_consistency_check/';
+        this.page.title = 'pt-table-checksum使用方法及主从一致性校验';
+      };
+      function loadComments () {
+        var d = document, s = d.createElement('script');
+        s.src = 'https://tyoungcn.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      }
+      
+        $(function () {
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          if (offsetTop <= 0) {
+            // load directly when there's no a scrollbar
+            loadComments();
+          } else {
+            $(window).on('scroll.disqus_scroll', function () {
+              var scrollTop = document.documentElement.scrollTop;
+              if (scrollTop >= offsetTop) {
+                $(window).off('.disqus_scroll');
+                loadComments();
+              }
+            });
+          }
+        });
+      
+    </script>
+  
+
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/algolia-instant-search/instantsearch.min.css">
+
+  
+  
+  <script src="/lib/algolia-instant-search/instantsearch.min.js"></script>
+  
+
+  <script src="/js/src/algolia-search.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

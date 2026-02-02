@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.0.6" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16-next.png?v=6.0.6">
+
+
+  <link rel="mask-icon" href="/logo.svg?v=6.0.6" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.0.6',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '65YBN7EK61',
+      apiKey: '249c071ab47e1ab1c0d5c9c8930a9aba',
+      indexName: 'db.tyoung.me',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="应用场景由于运维及存档分析需要，需要将某些程序、文件调用日志导入到本地MariaDB数据库存储。同时为了节省磁盘空间，决定使用TokuDB存储引擎。 在MariaDB5.5.34及10.0.6之后的版本已经包含了TokuDB存储引擎，只是默认没有开启，可以根据需要手动进行开启。开启方式也很简单，方法如下文介绍。  MariaDB的二进制包版本中，只有名称中带有glibc_214的压缩包版本，才包含">
+<meta name="keywords" content="MariaDB,TokuDB">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MariaDB开启TokuDB存储引擎">
+<meta property="og:url" content="https://db.tyoung.me/2016/11/enable_tokudb_for_mariadb/index.html">
+<meta property="og:site_name" content="Tyoung&#39;s Blog">
+<meta property="og:description" content="应用场景由于运维及存档分析需要，需要将某些程序、文件调用日志导入到本地MariaDB数据库存储。同时为了节省磁盘空间，决定使用TokuDB存储引擎。 在MariaDB5.5.34及10.0.6之后的版本已经包含了TokuDB存储引擎，只是默认没有开启，可以根据需要手动进行开启。开启方式也很简单，方法如下文介绍。  MariaDB的二进制包版本中，只有名称中带有glibc_214的压缩包版本，才包含">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2020-04-21T15:15:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MariaDB开启TokuDB存储引擎">
+<meta name="twitter:description" content="应用场景由于运维及存档分析需要，需要将某些程序、文件调用日志导入到本地MariaDB数据库存储。同时为了节省磁盘空间，决定使用TokuDB存储引擎。 在MariaDB5.5.34及10.0.6之后的版本已经包含了TokuDB存储引擎，只是默认没有开启，可以根据需要手动进行开启。开启方式也很简单，方法如下文介绍。  MariaDB的二进制包版本中，只有名称中带有glibc_214的压缩包版本，才包含">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Tyoung's Blog" type="application/atom+xml">
+
+
+
+
+  <link rel="canonical" href="https://db.tyoung.me/2016/11/enable_tokudb_for_mariadb/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>MariaDB开启TokuDB存储引擎 | Tyoung's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"> 
+
+<div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Tyoung's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">DBA之路</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+          
+  <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives</a>
+</li>
+
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  
+  <div class="algolia-popup popup search-popup">
+    <div class="algolia-search">
+      <div class="algolia-search-input-icon">
+        <i class="fa fa-search"></i>
+      </div>
+      <div class="algolia-search-input" id="algolia-search-input"></div>
+    </div>
+
+    <div class="algolia-results">
+      <div id="algolia-stats"></div>
+      <div id="algolia-hits"></div>
+      <div id="algolia-pagination" class="algolia-pagination"></div>
+    </div>
+
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+  </div>
+
+
+
+
+    </div>
+  
+</nav>
+
+
+  
+
+
+
+ </div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://db.tyoung.me/2016/11/enable_tokudb_for_mariadb/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Tyoung">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/static/other_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Tyoung's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MariaDB开启TokuDB存储引擎</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2016-11-09T22:26:19+08:00">2016-11-09</time>
+            
+
+            
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/11/enable_tokudb_for_mariadb/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/11/enable_tokudb_for_mariadb/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h1><p>由于运维及存档分析需要，需要将某些程序、文件调用日志导入到本地MariaDB数据库存储。同时为了节省磁盘空间，决定使用TokuDB存储引擎。</p>
+<p>在MariaDB<code>5.5.34</code>及<code>10.0.6</code>之后的版本已经包含了TokuDB存储引擎，只是默认没有开启，可以根据需要手动进行开启。开启方式也很简单，方法如下文介绍。</p>
+<blockquote>
+<p>MariaDB的二进制包版本中，只有名称中带有<code>glibc_214</code>的压缩包版本，才包含TokuDB引擎。</p>
+</blockquote>
+<a id="more"></a>
+<h1 id="系统环境"><a href="#系统环境" class="headerlink" title="系统环境"></a>系统环境</h1><ul>
+<li>OS: CentOS 7</li>
+<li>DB Version: MariaDB Enterprise 10.0.23</li>
+</ul>
+<h1 id="禁用Transparent-Huge-Pages-THP"><a href="#禁用Transparent-Huge-Pages-THP" class="headerlink" title="禁用Transparent Huge Pages(THP)"></a>禁用Transparent Huge Pages(THP)</h1><p>检查Linux是否开启Transparent Huge Pages。如果有开启，则需要关闭，否则MariaDB无法开启TokuDB引擎。</p>
+<p>原因：</p>
+<blockquote>
+<p>Transparent Huge Pages is a feature in newer linux kernel versions that causes problems for the memory usage tracking calculations in TokuKV and can lead to memory overcommit. If you have this feature enabled, TokuKV will not start, and you should turn it off.</p>
+</blockquote>
+<p>如果没有禁用Transparent Huge Pages，则开启TokuDB后启动MariaDB时，错误日志记录如下，不过mysqld服务仍是可以正常启动的。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">Transparent huge pages are enabled, according to /sys/kernel/mm/transparent_hugepage/enabled</span><br><span class="line">160517 11:40:22 [ERROR] TokuDB: Huge pages are enabled, <span class="built_in">disable</span> them before continuing</span><br><span class="line"></span><br><span class="line">160517 11:40:22 [ERROR] ************************************************************</span><br><span class="line">160517 11:40:22 [ERROR]</span><br><span class="line">160517 11:40:22 [ERROR]                         @@@@@@@@@@@</span><br><span class="line">160517 11:40:22 [ERROR]                       @@<span class="string">'         '</span>@@</span><br><span class="line">160517 11:40:22 [ERROR]                      @@    _     _  @@</span><br><span class="line">160517 11:40:22 [ERROR]                      |    (.)   (.)  |</span><br><span class="line">160517 11:40:22 [ERROR]                      |             ` |</span><br><span class="line">160517 11:40:22 [ERROR]                      |        &gt;    <span class="string">' |</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR]                      |     .----.    |</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR]                      ..   |.----.|  ..</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR]                       ..  '</span>      <span class="string">' ..</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR]                         .._______,.</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR]</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR] TokuDB will not run with transparent huge pages enabled.</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR] Please disable them to continue.</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR] (echo never &gt; /sys/kernel/mm/transparent_hugepage/enabled)</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR]</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR] ************************************************************</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR] Plugin '</span>TokuDB<span class="string">' init function returned error.</span></span><br><span class="line"><span class="string">160517 11:40:22 [ERROR] Plugin '</span>TokuDB<span class="string">' registration as a STORAGE ENGINE failed.</span></span><br></pre></td></tr></table></figure></p>
+<p>未禁用Transparent Huge Pages时，在MySQL命令行，开启TokuDB时，报错信息如下：<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; INSTALL SONAME 'ha_tokudb';</span><br><span class="line">ERROR 1123 (HY000): Can't initialize function 'TokuDB'; Plugin initialization function failed.</span><br></pre></td></tr></table></figure></p>
+<h2 id="检查是否开启Transparent-Huge-Pages"><a href="#检查是否开启Transparent-Huge-Pages" class="headerlink" title="检查是否开启Transparent Huge Pages"></a>检查是否开启Transparent Huge Pages</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; cat /sys/kernel/mm/transparent_hugepage/enabled</span><br></pre></td></tr></table></figure>
+<p>执行以上命令，如果提示路径不存在，或返回以下信息，则表示没有开启Transparent Huge Pages。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">always madvise [never]</span><br></pre></td></tr></table></figure></p>
+<p>如果返回以下信息，则表示已开启Transparent Huge Pages，需要将其禁用。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[always] madvise never</span><br></pre></td></tr></table></figure></p>
+<h2 id="禁用Transparent-Huge-Pages"><a href="#禁用Transparent-Huge-Pages" class="headerlink" title="禁用Transparent Huge Pages"></a>禁用Transparent Huge Pages</h2><h3 id="临时禁用"><a href="#临时禁用" class="headerlink" title="临时禁用"></a>临时禁用</h3><p>以下更改立即生效，在重启后失效：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; <span class="built_in">echo</span> never &gt; /sys/kernel/mm/transparent_hugepage/enabled</span><br></pre></td></tr></table></figure></p>
+<h3 id="永久禁用"><a href="#永久禁用" class="headerlink" title="永久禁用"></a>永久禁用</h3><p>以下更改在重启后生效，且仅限CentOS或RedHat系统。</p>
+<p>在文件<code>/etc/default/grub</code>添加以下内容：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GRUB_CMDLINE_LINUX_DEFAULT=<span class="string">"transparent_hugepage=never"</span></span><br></pre></td></tr></table></figure></p>
+<p>更新grub (boot loader)：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; grub2-mkconfig -o /boot/grub2/grub.cfg <span class="string">"<span class="variable">$@</span>"</span></span><br></pre></td></tr></table></figure>
+<p>以上是<a href="https://mariadb.com/kb/en/mariadb/enabling-tokudb/#check-for-transparent-hugepage-support-on-linux" target="_blank" rel="noopener">MariaDB官方文档</a>介绍的方法。<br>在公司的测试机上按照以上修改，重启电脑后，Transparent Huge Pages和预料中的一样，被禁用掉了。可是，当我在自己的虚拟机和本地开发机器上，按照以上修改重启系统后，Transparent Huge Pages并没有被禁用掉。如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; cat /sys/kernel/mm/transparent_hugepage/enabled</span><br><span class="line">[always] madvise never</span><br></pre></td></tr></table></figure></p>
+<p>参考<a href="https://docs.mongodb.com/manual/tutorial/transparent-huge-pages/#configure-thp-tuned" target="_blank" rel="noopener">MongoDB官方文档</a>，在禁用Transparent Huge Pages时提到，<strong>如果有在Red Hat或者CentOS(6+)系统使用tuned或ktune，还需要添加额外的配置，以防止THP被重新启用。</strong></p>
+<blockquote>
+<p>tuned和ktune是Red Hat和CentOS系统上的动态调优工具，通过其能够禁用transparent huge pages。如果要通过tuned和ktune来禁用transparent huge pages，需要创建一个配置文件设置THP的值为<code>never</code>。</p>
+</blockquote>
+<p>以下是CentOS 7系统通过添加tuned配置文件来禁用transparent huge pages的方法，CentOS 6系统的配置方法与此有些不同，可以参考<a href="https://docs.mongodb.com/manual/tutorial/transparent-huge-pages/#configure-thp-tuned" target="_blank" rel="noopener">MongoDB官方文档</a>。</p>
+<ol>
+<li><p>新建tuned配置文件夹</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">  shell&gt; mkdir /etc/tuned/no-thp</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>添加配置文件<code>tuned.conf</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">  shell&gt; vim /etc/tuned/no-thp/tuned.conf</span><br></pre></td></tr></table></figure>
+<p>并添加以下配置内容：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">  [main]</span><br><span class="line">  include=virtual-guest</span><br><span class="line">  [vm]</span><br><span class="line">  transparent_hugepages=never</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>使新的配置文件生效</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">  shell&gt; tuned-adm profile no-thp</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>以上配置添加完成后，再次重启系统，查看及确认Transparent Huge Pages已经被禁用，如下。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; cat /sys/kernel/mm/transparent_hugepage/enabled</span><br><span class="line">always madvise [never]</span><br></pre></td></tr></table></figure></p>
+<h1 id="修改MariaDB配置文件，启用TokuDB"><a href="#修改MariaDB配置文件，启用TokuDB" class="headerlink" title="修改MariaDB配置文件，启用TokuDB"></a>修改MariaDB配置文件，启用TokuDB</h1><p>在配置文件<code>my.cnf</code>中添加以下配置，在每次启动时都启用TokuDB存储引擎，重启生效。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">plugin-load = ha_tokudb</span><br></pre></td></tr></table></figure></p>
+<p>当然，也可以在不重启MariaDB的情况下，执行以下MySQL命令，启用TokuDB存储引擎。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; INSTALL SONAME 'ha_tokudb';</span><br></pre></td></tr></table></figure></p>
+<p>使用<code>SHOW ENGINES</code>命令查看已开启的存储引擎，可以看到TokuDB已启用。<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show engines;</span><br><span class="line">+<span class="comment">--------------------+---------+----------------------------------------------------------------------------+--------------+------+------------+</span></span><br><span class="line">| Engine             | Support | <span class="keyword">Comment</span>                                                                    | Transactions | XA   | Savepoints |</span><br><span class="line">+<span class="comment">--------------------+---------+----------------------------------------------------------------------------+--------------+------+------------+</span></span><br><span class="line">| CSV                | YES     | CSV <span class="keyword">storage</span> <span class="keyword">engine</span>                                                         | <span class="keyword">NO</span>           | <span class="keyword">NO</span>   | <span class="keyword">NO</span>         |</span><br><span class="line">| MRG_MyISAM         | YES     | Collection <span class="keyword">of</span> identical MyISAM <span class="keyword">tables</span>                                      | <span class="keyword">NO</span>           | <span class="keyword">NO</span>   | <span class="keyword">NO</span>         |</span><br><span class="line">| <span class="keyword">MEMORY</span>             | YES     | <span class="keyword">Hash</span> based, <span class="keyword">stored</span> <span class="keyword">in</span> <span class="keyword">memory</span>, useful <span class="keyword">for</span> <span class="keyword">temporary</span> <span class="keyword">tables</span>                  | <span class="keyword">NO</span>           | <span class="keyword">NO</span>   | <span class="keyword">NO</span>         |</span><br><span class="line">| BLACKHOLE          | <span class="keyword">NO</span>      | /dev/<span class="literal">null</span> <span class="keyword">storage</span> <span class="keyword">engine</span> (anything you write <span class="keyword">to</span> it disappears)             | <span class="literal">NULL</span>         | <span class="literal">NULL</span> | <span class="literal">NULL</span>       |</span><br><span class="line">| MyISAM             | YES     | MyISAM <span class="keyword">storage</span> <span class="keyword">engine</span>                                                      | <span class="keyword">NO</span>           | <span class="keyword">NO</span>   | <span class="keyword">NO</span>         |</span><br><span class="line">| TokuDB             | YES     | Percona TokuDB <span class="keyword">Storage</span> <span class="keyword">Engine</span> <span class="keyword">with</span> Fractal Tree(tm) Technology             | YES          | YES  | YES        |</span><br><span class="line">| <span class="keyword">InnoDB</span>             | <span class="keyword">DEFAULT</span> | Percona-XtraDB, Supports transactions, <span class="keyword">row</span>-<span class="keyword">level</span> locking, <span class="keyword">and</span> <span class="keyword">foreign</span> <span class="keyword">keys</span> | YES          | YES  | YES        |</span><br><span class="line">| <span class="keyword">ARCHIVE</span>            | <span class="keyword">NO</span>      | <span class="keyword">Archive</span> <span class="keyword">storage</span> <span class="keyword">engine</span>                                                     | <span class="literal">NULL</span>         | <span class="literal">NULL</span> | <span class="literal">NULL</span>       |</span><br><span class="line">| FEDERATED          | YES     | FederatedX <span class="keyword">pluggable</span> <span class="keyword">storage</span> <span class="keyword">engine</span>                                        | YES          | <span class="keyword">NO</span>   | YES        |</span><br><span class="line">| PERFORMANCE_SCHEMA | YES     | <span class="keyword">Performance</span> <span class="keyword">Schema</span>                                                         | <span class="keyword">NO</span>           | <span class="keyword">NO</span>   | <span class="keyword">NO</span>         |</span><br><span class="line">| Aria               | YES     | Crash-<span class="keyword">safe</span> <span class="keyword">tables</span> <span class="keyword">with</span> MyISAM heritage                                     | <span class="keyword">NO</span>           | <span class="keyword">NO</span>   | <span class="keyword">NO</span>         |</span><br><span class="line">+<span class="comment">--------------------+---------+----------------------------------------------------------------------------+--------------+------+------------+</span></span><br><span class="line"><span class="number">11</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.02</span> sec)</span><br></pre></td></tr></table></figure></p>
+<h1 id="相关参数配置"><a href="#相关参数配置" class="headerlink" title="相关参数配置"></a>相关参数配置</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line"><span class="comment"># TokuDB</span></span><br><span class="line">plugin-load = ha_tokudb</span><br><span class="line">tokudb_cache_size = 4G</span><br><span class="line">tokudb_data_dir = /data/mysql/mysql3306/tokudb_data</span><br><span class="line">tokudb_log_dir = /data/mysql/mysql3306/logs</span><br><span class="line">tokudb_tmp_dir = /data/mysql/mysql3306/tmp</span><br><span class="line">tokudb_pk_insert_mode = 2</span><br></pre></td></tr></table></figure>
+<p>各参数说明：</p>
+<ul>
+<li>tokudb_cache_size<br>默认情况下，TokuDB分配50%的系统内存。</li>
+<li>tokudb_data_dir<br>指定TokuDB数据的存储位置。默认为空，使用<code>datadir</code>定义的路径。</li>
+<li>tokudb_log_dir<br>指定TokuDB日志的存储位置。默认为空，使用<code>datadir</code>定义的路径。</li>
+<li>tokudb_tmp_dir<br>TokuDB批量导入数据时，临时文件的存储位置。TokuDB在使用LOAD DATA导入数据的时候会通过临时表(可能会很大)来完成。<br>默认为空，使用<code>datadir</code>定义的路径。</li>
+<li>tokudb_pk_insert_mode<br>主键写入的模式，只有值为<code>2</code>时，才支持RBR。</li>
+</ul>
+<h1 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h1><h2 id="变量toukudb-cache-size的值大小设置"><a href="#变量toukudb-cache-size的值大小设置" class="headerlink" title="变量toukudb_cache_size的值大小设置"></a>变量<code>toukudb_cache_size</code>的值大小设置</h2><p>TokuDB默认分配50%的系统内存，该值由变量<code>toukudb_cache_size</code>控制，类似于InnoDB的<code>innodb_buffer_pool_size</code>。<br>如果同时使用InnoDB和TokuDB存储引擎，需适当调整这两个变量的值，以免超过系统内存，造成swap交换。</p>
+<p><code>toukudb_cache_size</code>为只读变量，修改后重启生效。</p>
+<h2 id="变量tokudb-pk-insert-mode对复制的影响"><a href="#变量tokudb-pk-insert-mode对复制的影响" class="headerlink" title="变量tokudb_pk_insert_mode对复制的影响"></a>变量<code>tokudb_pk_insert_mode</code>对复制的影响</h2><p>当变量<code>tokudb_pk_insert_mode</code>为默认值（<code>1</code>）或<code>0</code>时，基于ROW格式的复制（RBR）将无法运行，需要将该变量的值修改为<code>2</code>，RBR才能正常运行。</p>
+<p>变量<code>tokudb_pk_insert_mode</code>的说明如下：</p>
+<blockquote>
+<ul>
+<li><strong>Description:</strong> Mode for primary key inserts using either <code>REPLACE INTO</code> or <code>INSERT IGNORE</code> on tables with no secondary index, or where all columns in the secondary index are in the primary key. For example <code>PRIMARY KEY (a,b,c), key (b,c)</code><ul>
+<li><code>0</code>: Fast inserts. Triggers may not work, and row-based replication will not work.</li>
+<li><code>1</code>: Fast inserts if no triggers are defined, otherwise inserts may be slow. Row-based replication will not work.</li>
+<li><code>2</code>: Slow inserts. Triggers and row-based replication work normally.</li>
+</ul>
+</li>
+<li><strong>Scope:</strong> Global, Session</li>
+<li><strong>Dynamic:</strong> Yes</li>
+<li><strong>Data Type:</strong> enumerated</li>
+<li><strong>Default Value:</strong> <code>1</code></li>
+<li><strong>Valid Values:</strong> <code>0</code>, <code>1</code>, <code>2</code></li>
+</ul>
+</blockquote>
+<h1 id="数据占用存储空间对比"><a href="#数据占用存储空间对比" class="headerlink" title="数据占用存储空间对比"></a>数据占用存储空间对比</h1><p>使用MyISAM引擎存储日志数据时，表数据大小是<code>13G</code>；更改为TokuDB引擎后，使用默认的压缩方式（tokudb_zlib），表数据大小是<code>1.6G</code>。可以看出，TokuDB相对于MyISAM，数据压缩比达到8倍之多。</p>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><ol>
+<li>MariaDB官方文档-Enabling TokuDB：<br><a href="https://mariadb.com/kb/en/mariadb/enabling-tokudb" target="_blank" rel="noopener">https://mariadb.com/kb/en/mariadb/enabling-tokudb</a></li>
+<li>MongoDB官方文档-Disable Transparent Huge Pages(THP)：<br><a href="https://docs.mongodb.com/manual/tutorial/transparent-huge-pages/" target="_blank" rel="noopener">https://docs.mongodb.com/manual/tutorial/transparent-huge-pages/</a></li>
+<li>TokuDB使用简单说明：<br><a href="http://highdb.com/tokudb-特性概览/" target="_blank" rel="noopener">http://highdb.com/tokudb-特性概览/</a></li>
+</ol>
+
+      
+    </div>
+
+    
+      
+
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\12\using_tokudb_and_partition_for_zabbix_tables\" rel="bookmark">Zabbix数据表使用TokuDB引擎及分区表</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\03\migrate_mysql_to_mariadb\" rel="bookmark">MySQL迁移到MariaDB</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\09\how_to_deal_with_xtrabackup_error_log_block_numbers_mismatch\" rel="bookmark">XtraBackup error：log block numbers mismatch分析处理</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/static/other_images/wechat_pay-tyoung.png" alt="Tyoung WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/static/other_images/alipay-tyoung.png" alt="Tyoung Alipay">
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author: </strong>Tyoung</li>
+  <li class="post-copyright-link">
+    <strong>Post link:</strong>
+    <a href="https://db.tyoung.me/2016/11/enable_tokudb_for_mariadb/" title="MariaDB开启TokuDB存储引擎">https://db.tyoung.me/2016/11/enable_tokudb_for_mariadb/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MariaDB/" rel="tag"># MariaDB</a>
+          
+            <a href="/tags/TokuDB/" rel="tag"># TokuDB</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/" rel="next" title="pt-table-checksum使用dsn方式连接检测从库">
+                <i class="fa fa-chevron-left"></i> pt-table-checksum使用dsn方式连接检测从库
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/12/using_tokudb_and_partition_for_zabbix_tables/" rel="prev" title="Zabbix数据表使用TokuDB引擎及分区表">
+                Zabbix数据表使用TokuDB引擎及分区表 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/static/other_images/avatar.jpg" alt="Tyoung">
+            
+              <p class="site-author-name" itemprop="name">Tyoung</p>
+              <p class="site-description motion-element" itemprop="description">纸上得来终觉浅，绝知此事要躬行。</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">15</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/tyoungcn" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.linkedin.com/in/tyoungcn" target="_blank" title="LinkedIn"><i class="fa fa-fw fa-linkedin-square"></i>LinkedIn</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#应用场景"><span class="nav-number">1.</span> <span class="nav-text">应用场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#系统环境"><span class="nav-number">2.</span> <span class="nav-text">系统环境</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#禁用Transparent-Huge-Pages-THP"><span class="nav-number">3.</span> <span class="nav-text">禁用Transparent Huge Pages(THP)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#检查是否开启Transparent-Huge-Pages"><span class="nav-number">3.1.</span> <span class="nav-text">检查是否开启Transparent Huge Pages</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#禁用Transparent-Huge-Pages"><span class="nav-number">3.2.</span> <span class="nav-text">禁用Transparent Huge Pages</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#临时禁用"><span class="nav-number">3.2.1.</span> <span class="nav-text">临时禁用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#永久禁用"><span class="nav-number">3.2.2.</span> <span class="nav-text">永久禁用</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#修改MariaDB配置文件，启用TokuDB"><span class="nav-number">4.</span> <span class="nav-text">修改MariaDB配置文件，启用TokuDB</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#相关参数配置"><span class="nav-number">5.</span> <span class="nav-text">相关参数配置</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#注意事项"><span class="nav-number">6.</span> <span class="nav-text">注意事项</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#变量toukudb-cache-size的值大小设置"><span class="nav-number">6.1.</span> <span class="nav-text">变量toukudb_cache_size的值大小设置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#变量tokudb-pk-insert-mode对复制的影响"><span class="nav-number">6.2.</span> <span class="nav-text">变量tokudb_pk_insert_mode对复制的影响</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据占用存储空间对比"><span class="nav-number">7.</span> <span class="nav-text">数据占用存储空间对比</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文章"><span class="nav-number">8.</span> <span class="nav-text">参考文章</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2015 &mdash; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-database"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Tyoung</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.0.6"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.0.6"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.0.6"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.0.6"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+    <script id="dsq-count-scr" src="https://tyoungcn.disqus.com/count.js" async></script>
+  
+
+  
+    <script type="text/javascript">
+      var disqus_config = function () {
+        this.page.url = 'https://db.tyoung.me/2016/11/enable_tokudb_for_mariadb/';
+        this.page.identifier = '2016/11/enable_tokudb_for_mariadb/';
+        this.page.title = 'MariaDB开启TokuDB存储引擎';
+      };
+      function loadComments () {
+        var d = document, s = d.createElement('script');
+        s.src = 'https://tyoungcn.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      }
+      
+        $(function () {
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          if (offsetTop <= 0) {
+            // load directly when there's no a scrollbar
+            loadComments();
+          } else {
+            $(window).on('scroll.disqus_scroll', function () {
+              var scrollTop = document.documentElement.scrollTop;
+              if (scrollTop >= offsetTop) {
+                $(window).off('.disqus_scroll');
+                loadComments();
+              }
+            });
+          }
+        });
+      
+    </script>
+  
+
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/algolia-instant-search/instantsearch.min.css">
+
+  
+  
+  <script src="/lib/algolia-instant-search/instantsearch.min.js"></script>
+  
+
+  <script src="/js/src/algolia-search.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

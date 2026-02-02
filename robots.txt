@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /css/
+Disallow: /images/
+Disallow: /js/
+Disallow: /uploads/
+Disallow: /vendors/
+
+Sitemap: https://db.tyoung.me/sitemap.xml

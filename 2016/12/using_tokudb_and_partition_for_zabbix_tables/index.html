@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.0.6" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16-next.png?v=6.0.6">
+
+
+  <link rel="mask-icon" href="/logo.svg?v=6.0.6" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.0.6',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '65YBN7EK61',
+      apiKey: '249c071ab47e1ab1c0d5c9c8930a9aba',
+      indexName: 'db.tyoung.me',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="应用场景线上的Zabbix库的数据表默认使用的是InnoDB存储引擎，随着时间的增长，数据量和占用的存储空间越来越多，单表数据达到了3亿之多。同时，Zabbix的Housekeeping每次在定期清理历史数据时，执行时间都超过了1分多钟，严重影响数据库的性能。 TokuDB引擎的高压缩比、高INSERT性能，正好适用于Zabbix这种INSERT多、UPDATE少，而且数据量大的环境。所以准备把相">
+<meta name="keywords" content="MySQL,MariaDB,TokuDB,Zabbix,分区表">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Zabbix数据表使用TokuDB引擎及分区表">
+<meta property="og:url" content="https://db.tyoung.me/2016/12/using_tokudb_and_partition_for_zabbix_tables/index.html">
+<meta property="og:site_name" content="Tyoung&#39;s Blog">
+<meta property="og:description" content="应用场景线上的Zabbix库的数据表默认使用的是InnoDB存储引擎，随着时间的增长，数据量和占用的存储空间越来越多，单表数据达到了3亿之多。同时，Zabbix的Housekeeping每次在定期清理历史数据时，执行时间都超过了1分多钟，严重影响数据库的性能。 TokuDB引擎的高压缩比、高INSERT性能，正好适用于Zabbix这种INSERT多、UPDATE少，而且数据量大的环境。所以准备把相">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2020-04-21T15:15:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Zabbix数据表使用TokuDB引擎及分区表">
+<meta name="twitter:description" content="应用场景线上的Zabbix库的数据表默认使用的是InnoDB存储引擎，随着时间的增长，数据量和占用的存储空间越来越多，单表数据达到了3亿之多。同时，Zabbix的Housekeeping每次在定期清理历史数据时，执行时间都超过了1分多钟，严重影响数据库的性能。 TokuDB引擎的高压缩比、高INSERT性能，正好适用于Zabbix这种INSERT多、UPDATE少，而且数据量大的环境。所以准备把相">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Tyoung's Blog" type="application/atom+xml">
+
+
+
+
+  <link rel="canonical" href="https://db.tyoung.me/2016/12/using_tokudb_and_partition_for_zabbix_tables/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Zabbix数据表使用TokuDB引擎及分区表 | Tyoung's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"> 
+
+<div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Tyoung's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">DBA之路</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+          
+  <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives</a>
+</li>
+
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  
+  <div class="algolia-popup popup search-popup">
+    <div class="algolia-search">
+      <div class="algolia-search-input-icon">
+        <i class="fa fa-search"></i>
+      </div>
+      <div class="algolia-search-input" id="algolia-search-input"></div>
+    </div>
+
+    <div class="algolia-results">
+      <div id="algolia-stats"></div>
+      <div id="algolia-hits"></div>
+      <div id="algolia-pagination" class="algolia-pagination"></div>
+    </div>
+
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+  </div>
+
+
+
+
+    </div>
+  
+</nav>
+
+
+  
+
+
+
+ </div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://db.tyoung.me/2016/12/using_tokudb_and_partition_for_zabbix_tables/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Tyoung">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/static/other_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Tyoung's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Zabbix数据表使用TokuDB引擎及分区表</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2016-12-09T15:05:44+08:00">2016-12-09</time>
+            
+
+            
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/12/using_tokudb_and_partition_for_zabbix_tables/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/12/using_tokudb_and_partition_for_zabbix_tables/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h1><p>线上的Zabbix库的数据表默认使用的是InnoDB存储引擎，随着时间的增长，数据量和占用的存储空间越来越多，单表数据达到了3亿之多。同时，Zabbix的Housekeeping每次在定期清理历史数据时，执行时间都超过了1分多钟，严重影响数据库的性能。</p>
+<p>TokuDB引擎的高压缩比、高INSERT性能，正好适用于Zabbix这种INSERT多、UPDATE少，而且数据量大的环境。所以准备把相关的数据表修改为TokuDB引擎。<br>对Zabbix数据表根据时间字段进行分区后，可以通过删除旧的分区，来达到快速清除历史数据的目的。而且，查询Zabbix最近的数据时，只需要查询单个或几个分区即可，而不需要访问整张表，这样查询性能也得到了提升。</p>
+<a id="more"></a>
+<p>通过查看Zabbix数据库各表数据的存储大小，可以发现，主要是<code>history</code>和<code>trends</code>相关的表所占的存储空间比较大。因此，只对这些表使用TokuDB引擎及分区表。<br>以下是需要分区的表：</p>
+<ul>
+<li><code>history</code></li>
+<li><code>history_log</code></li>
+<li><code>history_str</code></li>
+<li><code>history_text</code></li>
+<li><code>history_uint</code></li>
+<li><code>trends</code></li>
+<li><code>trends_uint</code></li>
+</ul>
+<p>将这些表按照<code>clock</code>时间字段进行分区，每个分区包含一个月的数据。</p>
+<h1 id="系统环境"><a href="#系统环境" class="headerlink" title="系统环境"></a>系统环境</h1><ul>
+<li>OS: CentOS 7</li>
+<li>DB: MariaDB Enterprise 10.0.23</li>
+<li>Zabbix Version: 3.0.1</li>
+</ul>
+<h1 id="开启TokuDB引擎"><a href="#开启TokuDB引擎" class="headerlink" title="开启TokuDB引擎"></a>开启TokuDB引擎</h1><p>关于MariaDB如何开启TokuDB引擎，可参考之前的文章<a href="/2016/11/enable_tokudb_for_mariadb/">《MariaDB开启TokuDB存储引擎》</a>。</p>
+<h1 id="修改存储引擎及开启分区表"><a href="#修改存储引擎及开启分区表" class="headerlink" title="修改存储引擎及开启分区表"></a>修改存储引擎及开启分区表</h1><h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
+<li>由于TokuDB不支持外键，且InnoDB分区表也不支持外键，所以只要有使用TokuDB引擎或分区表，肯定不支持相关的表的外键。<br>以上7个<code>history</code>和<code>trends</code>相关的表，都没有外键，因此可以使用TokuDB引擎和分区表。</li>
+<li>由于分区表的限制，分区表所使用的列必须是主键和唯一键的一部分或全部。存在以下四种情况：<ol>
+<li>分区表只有主键，没有唯一键。则分区表所使用的列必须是主键的一部分或全部。</li>
+<li>分区表没有主键，只有唯一键。则分区表所使用的列必须是唯一键的一部分或全部。</li>
+<li>分区表既有主键也有唯一键。则分区表所使用的列必须是主键和唯一键的共同部分，如果主键和唯一键没有共同部分，则表无法进行分区。</li>
+<li>分区表既没有主键也没有唯一键。则分区表所使用的列不受上述条件限制。</li>
+</ol>
+</li>
+</ol>
+<p>由于<code>history_log</code>、<code>history_text</code>表结构具有主键和唯一键，且主键和唯一键都不包含分区使用的<code>clock</code>字段，所以需要调整这两个表，以进行表分区。</p>
+<p>表<code>history_log</code>、<code>history_text</code>的原始结构如下：<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; SHOW CREATE TABLE history_log\G</span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">       Table: history_log</span><br><span class="line"><span class="keyword">Create</span> <span class="keyword">Table</span>: <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`history_log`</span> (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">bigint</span>(<span class="number">20</span>) <span class="keyword">unsigned</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`itemid`</span> <span class="built_in">bigint</span>(<span class="number">20</span>) <span class="keyword">unsigned</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`clock`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`timestamp`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`source`</span> <span class="built_in">varchar</span>(<span class="number">64</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">''</span>,</span><br><span class="line">  <span class="string">`severity`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`value`</span> <span class="built_in">text</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`logeventid`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`ns`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`id`</span>),</span><br><span class="line">  <span class="keyword">UNIQUE</span> <span class="keyword">KEY</span> <span class="string">`history_log_2`</span> (<span class="string">`itemid`</span>,<span class="string">`id`</span>),</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`history_log_1`</span> (<span class="string">`itemid`</span>,<span class="string">`clock`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8</span><br><span class="line"><span class="number">1</span> <span class="keyword">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; <span class="keyword">SHOW</span> <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> history_text\G</span><br><span class="line">*************************** <span class="number">1.</span> <span class="keyword">row</span> ***************************</span><br><span class="line">       <span class="keyword">Table</span>: history_text</span><br><span class="line"><span class="keyword">Create</span> <span class="keyword">Table</span>: <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`history_text`</span> (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">bigint</span>(<span class="number">20</span>) <span class="keyword">unsigned</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`itemid`</span> <span class="built_in">bigint</span>(<span class="number">20</span>) <span class="keyword">unsigned</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`clock`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`value`</span> <span class="built_in">text</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`ns`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`id`</span>),</span><br><span class="line">  <span class="keyword">UNIQUE</span> <span class="keyword">KEY</span> <span class="string">`history_text_2`</span> (<span class="string">`itemid`</span>,<span class="string">`id`</span>),</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`history_text_1`</span> (<span class="string">`itemid`</span>,<span class="string">`clock`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8</span><br><span class="line"><span class="number">1</span> <span class="keyword">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure></p>
+<p>表<code>history_log</code>、<code>history_text</code>的主键和索引调整如下：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; ALTER TABLE history_text DROP PRIMARY KEY, ADD INDEX (id), DROP INDEX history_text_2, ADD INDEX history_text_2 (itemid, id);</span><br><span class="line">mysql&gt; ALTER TABLE history_log DROP PRIMARY KEY, ADD INDEX (id), DROP INDEX history_log_2, ADD INDEX history_log_2 (itemid, id);</span><br></pre></td></tr></table></figure></p>
+<p>由于表的数据量比较多，如果直接在原表上执行以上调整主键和索引的SQL、修改存储引擎、及开启分区表的话，耗时会比较长。这里采取的是先将各表数据分月份导出，然后重建已经修改的分区表结构，再将数据导入到修改后的表里，这样稍微会快些。</p>
+<h2 id="重建表结构"><a href="#重建表结构" class="headerlink" title="重建表结构"></a>重建表结构</h2><p>将原表进行重命名，并使用新的已分区的表结构创建新表。这样可以保证在数据导入导出，修改表结构的时候，不会导致Zabbix丢失这段时间的监控数据。</p>
+<p>重建表结构脚本：<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">USE</span> zabbix;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history</span></span><br><span class="line"><span class="keyword">RENAME</span> <span class="keyword">TABLE</span> history <span class="keyword">TO</span> history_old;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`history`</span> (</span><br><span class="line">  <span class="string">`itemid`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`clock`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`value`</span> <span class="keyword">DOUBLE</span>(<span class="number">16</span>,<span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0.0000'</span>,</span><br><span class="line">  <span class="string">`ns`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`history_1`</span> (<span class="string">`itemid`</span>,<span class="string">`clock`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=TokuDB <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span>(clock)</span><br><span class="line">(<span class="keyword">PARTITION</span> p201609 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201610 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201611 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> pmore <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (MAXVALUE) <span class="keyword">ENGINE</span> = TokuDB</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_log</span></span><br><span class="line"><span class="keyword">RENAME</span> <span class="keyword">TABLE</span> history_log <span class="keyword">TO</span> history_log_old;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`history_log`</span> (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`itemid`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`clock`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`timestamp`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`source`</span> <span class="built_in">VARCHAR</span>(<span class="number">64</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">''</span>,</span><br><span class="line">  <span class="string">`severity`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`value`</span> <span class="built_in">TEXT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`logeventid`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`ns`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="keyword">KEY</span> (<span class="string">`id`</span>),</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`history_log_2`</span> (<span class="string">`itemid`</span>,<span class="string">`id`</span>),</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`history_log_1`</span> (<span class="string">`itemid`</span>,<span class="string">`clock`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=TokuDB <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span>(clock)</span><br><span class="line">(<span class="keyword">PARTITION</span> p201609 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201610 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201611 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> pmore <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (MAXVALUE) <span class="keyword">ENGINE</span> = TokuDB</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_str</span></span><br><span class="line"><span class="keyword">RENAME</span> <span class="keyword">TABLE</span> history_str <span class="keyword">TO</span> history_str_old;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`history_str`</span> (</span><br><span class="line">  <span class="string">`itemid`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`clock`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`value`</span> <span class="built_in">VARCHAR</span>(<span class="number">255</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">''</span>,</span><br><span class="line">  <span class="string">`ns`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`history_str_1`</span> (<span class="string">`itemid`</span>,<span class="string">`clock`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=TokuDB <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span>(clock)</span><br><span class="line">(<span class="keyword">PARTITION</span> p201609 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201610 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201611 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> pmore <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (MAXVALUE) <span class="keyword">ENGINE</span> = TokuDB</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_text</span></span><br><span class="line"><span class="keyword">RENAME</span> <span class="keyword">TABLE</span> history_text <span class="keyword">TO</span> history_text_old;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`history_text`</span> (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`itemid`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`clock`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`value`</span> <span class="built_in">TEXT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`ns`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="keyword">KEY</span> (<span class="string">`id`</span>),</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`history_text_2`</span> (<span class="string">`itemid`</span>,<span class="string">`id`</span>),</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`history_text_1`</span> (<span class="string">`itemid`</span>,<span class="string">`clock`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=TokuDB <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span>(clock)</span><br><span class="line">(<span class="keyword">PARTITION</span> p201609 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201610 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201611 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> pmore <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (MAXVALUE) <span class="keyword">ENGINE</span> = TokuDB</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_uint</span></span><br><span class="line"><span class="keyword">RENAME</span> <span class="keyword">TABLE</span> history_uint <span class="keyword">TO</span> history_uint_old;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`history_uint`</span> (</span><br><span class="line">  <span class="string">`itemid`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`clock`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`value`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`ns`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`history_uint_1`</span> (<span class="string">`itemid`</span>,<span class="string">`clock`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=TokuDB <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span>(clock)</span><br><span class="line">(<span class="keyword">PARTITION</span> p201609 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201610 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201611 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> pmore <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (MAXVALUE) <span class="keyword">ENGINE</span> = TokuDB</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- trends</span></span><br><span class="line"><span class="keyword">RENAME</span> <span class="keyword">TABLE</span> trends <span class="keyword">TO</span> trends_old;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`trends`</span> (</span><br><span class="line">  <span class="string">`itemid`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`clock`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`num`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`value_min`</span> <span class="keyword">DOUBLE</span>(<span class="number">16</span>,<span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0.0000'</span>,</span><br><span class="line">  <span class="string">`value_avg`</span> <span class="keyword">DOUBLE</span>(<span class="number">16</span>,<span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0.0000'</span>,</span><br><span class="line">  <span class="string">`value_max`</span> <span class="keyword">DOUBLE</span>(<span class="number">16</span>,<span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0.0000'</span>,</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`itemid`</span>,<span class="string">`clock`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=TokuDB <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span>(clock)</span><br><span class="line">(<span class="keyword">PARTITION</span> p201609 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201610 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201611 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> pmore <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (MAXVALUE) <span class="keyword">ENGINE</span> = TokuDB</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- trends_uint</span></span><br><span class="line"><span class="keyword">RENAME</span> <span class="keyword">TABLE</span> trends_uint <span class="keyword">TO</span> trends_uint_old;</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`trends_uint`</span> (</span><br><span class="line">  <span class="string">`itemid`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`clock`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`num`</span> <span class="built_in">INT</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`value_min`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`value_avg`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  <span class="string">`value_max`</span> <span class="built_in">BIGINT</span>(<span class="number">20</span>) <span class="keyword">UNSIGNED</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="string">'0'</span>,</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`itemid`</span>,<span class="string">`clock`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=TokuDB <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> <span class="keyword">RANGE</span>(clock)</span><br><span class="line">(<span class="keyword">PARTITION</span> p201609 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201610 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> p201611 <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (<span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>)) <span class="keyword">ENGINE</span> = TokuDB,</span><br><span class="line"> <span class="keyword">PARTITION</span> pmore <span class="keyword">VALUES</span> <span class="keyword">LESS</span> <span class="keyword">THAN</span> (MAXVALUE) <span class="keyword">ENGINE</span> = TokuDB</span><br><span class="line">);</span><br></pre></td></tr></table></figure></p>
+<h2 id="导出表数据"><a href="#导出表数据" class="headerlink" title="导出表数据"></a>导出表数据</h2><p>使用<code>SELECT ... INTO OUTFILE ...</code>命令将旧表数据分月份导出到文件。</p>
+<p>数据导出脚本：<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- history</span></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_old_201609'</span> <span class="keyword">FROM</span> zabbix.history_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-09-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_old_201610'</span> <span class="keyword">FROM</span> zabbix.history_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_old_201611'</span> <span class="keyword">FROM</span> zabbix.history_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_log</span></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_log_old_201609'</span> <span class="keyword">FROM</span> zabbix.history_log_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-09-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_log_old_201610'</span> <span class="keyword">FROM</span> zabbix.history_log_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_log_old_201611'</span> <span class="keyword">FROM</span> zabbix.history_log_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_str</span></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_str_old_201609'</span> <span class="keyword">FROM</span> zabbix.history_str_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-09-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_str_old_201610'</span> <span class="keyword">FROM</span> zabbix.history_str_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_str_old_201611'</span> <span class="keyword">FROM</span> zabbix.history_str_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_text</span></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_text_old_201609'</span> <span class="keyword">FROM</span> zabbix.history_text_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-09-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_text_old_201610'</span> <span class="keyword">FROM</span> zabbix.history_text_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_text_old_201611'</span> <span class="keyword">FROM</span> zabbix.history_text_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_uint</span></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_uint_old_201609'</span> <span class="keyword">FROM</span> zabbix.history_uint_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-09-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_uint_old_201610'</span> <span class="keyword">FROM</span> zabbix.history_uint_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/history_uint_old_201611'</span> <span class="keyword">FROM</span> zabbix.history_uint_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- trends</span></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/trends_old_201609'</span> <span class="keyword">FROM</span> zabbix.trends_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-09-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/trends_old_201610'</span> <span class="keyword">FROM</span> zabbix.trends_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/trends_old_201611'</span> <span class="keyword">FROM</span> zabbix.trends_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- trends_uint</span></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/trends_uint_old_201609'</span> <span class="keyword">FROM</span> zabbix.trends_uint_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-09-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/trends_uint_old_201610'</span> <span class="keyword">FROM</span> zabbix.trends_uint_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-10-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>);</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">INTO</span> <span class="keyword">OUTFILE</span> <span class="string">'/opt/tmp_zabbix/trends_uint_old_201611'</span> <span class="keyword">FROM</span> zabbix.trends_uint_old <span class="keyword">WHERE</span> clock &gt;= <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-11-01'</span>) <span class="keyword">AND</span> clock &lt; <span class="keyword">UNIX_TIMESTAMP</span>(<span class="string">'2016-12-01'</span>);</span><br></pre></td></tr></table></figure></p>
+<h2 id="导入表数据"><a href="#导入表数据" class="headerlink" title="导入表数据"></a>导入表数据</h2><p>使用<code>LOAD DATA INFILE</code>命令将各表数据分月份导入到新表。<br>由于在导出时，已按照月份将每月数据分别导出到对应的单独文件，所以在导入时可以指定每个数据文件对应的分区，以加快导入速度。</p>
+<p>在导入时，可以临时禁用当前session的binlog，设置<code>sync_binlog = 0</code>，<code>tokudb_commit_sync = 0</code>，以加快导入速度。同时，也可以增大<code>tokudb_lock_timeout</code>的值，以避免在导入本月分区的数据时，Zabbix写入数据等待超时而导致的这段时间的监控数据丢失。具体操作如下：</p>
+<ol>
+<li><p>首先设置以下GLOBAL变量：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> sync_binlog = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> tokudb_commit_sync = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">SET</span> <span class="keyword">GLOBAL</span> tokudb_lock_timeout = <span class="number">3600000</span>;  <span class="comment">-- 这里设置为1小时</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Kill掉Zabbix的数据库连接，以使刚才设置的全局变量生效；</p>
+</li>
+<li><p>退出当前登录的MySQL会话，重新登录以使刚才设置的全局变量生效。并设置以下SESSION变量，临时禁用binlog：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SET</span> <span class="keyword">SESSION</span> sql_log_bin = <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>执行以下数据导入脚本；</p>
+</li>
+<li>导入数据完成后，再恢复设置以上更改的变量值；</li>
+</ol>
+<p>数据导入脚本：<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- history</span></span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_old_201609'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history <span class="keyword">PARTITION</span> (p201609);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_old_201610'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history <span class="keyword">PARTITION</span> (p201610);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_old_201611'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history <span class="keyword">PARTITION</span> (p201611);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_log</span></span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_log_old_201609'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_log <span class="keyword">PARTITION</span> (p201609);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_log_old_201610'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_log <span class="keyword">PARTITION</span> (p201610);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_log_old_201611'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_log <span class="keyword">PARTITION</span> (p201611);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_str</span></span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_str_old_201609'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_str <span class="keyword">PARTITION</span> (p201609);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_str_old_201610'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_str <span class="keyword">PARTITION</span> (p201610);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_str_old_201611'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_str <span class="keyword">PARTITION</span> (p201611);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_text</span></span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_text_old_201609'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_text <span class="keyword">PARTITION</span> (p201609);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_text_old_201610'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_text <span class="keyword">PARTITION</span> (p201610);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_text_old_201611'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_text <span class="keyword">PARTITION</span> (p201611);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- history_uint</span></span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_uint_old_201609'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_uint <span class="keyword">PARTITION</span> (p201609);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_uint_old_201610'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_uint <span class="keyword">PARTITION</span> (p201610);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/history_uint_old_201611'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.history_uint <span class="keyword">PARTITION</span> (p201611);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- trends</span></span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/trends_old_201609'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.trends <span class="keyword">PARTITION</span> (p201609);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/trends_old_201610'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.trends <span class="keyword">PARTITION</span> (p201610);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/trends_old_201611'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.trends <span class="keyword">PARTITION</span> (p201611);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- trends_uint</span></span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/trends_uint_old_201609'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.trends_uint <span class="keyword">PARTITION</span> (p201609);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/trends_uint_old_201610'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.trends_uint <span class="keyword">PARTITION</span> (p201610);</span><br><span class="line"><span class="keyword">LOAD</span> <span class="keyword">DATA</span> <span class="keyword">INFILE</span> <span class="string">'/opt/tmp_zabbix/trends_uint_old_201611'</span> <span class="keyword">INTO</span> <span class="keyword">TABLE</span> zabbix.trends_uint <span class="keyword">PARTITION</span> (p201611);</span><br></pre></td></tr></table></figure></p>
+<h2 id="删除旧表"><a href="#删除旧表" class="headerlink" title="删除旧表"></a>删除旧表</h2><p>将表数据导入到新表后，查看Zabbix数据、图表展示是否正常。如果正常，即可删除旧表。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- truncate table</span></span><br><span class="line"><span class="keyword">TRUNCATE</span> <span class="keyword">TABLE</span> zabbix.history_old;</span><br><span class="line"><span class="keyword">TRUNCATE</span> <span class="keyword">TABLE</span> zabbix.history_log_old;</span><br><span class="line"><span class="keyword">TRUNCATE</span> <span class="keyword">TABLE</span> zabbix.history_str_old;</span><br><span class="line"><span class="keyword">TRUNCATE</span> <span class="keyword">TABLE</span> zabbix.history_text_old;</span><br><span class="line"><span class="keyword">TRUNCATE</span> <span class="keyword">TABLE</span> zabbix.history_uint_old;</span><br><span class="line"><span class="keyword">TRUNCATE</span> <span class="keyword">TABLE</span> zabbix.trends_old;</span><br><span class="line"><span class="keyword">TRUNCATE</span> <span class="keyword">TABLE</span> zabbix.trends_uint_old;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- drop table</span></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> zabbix.history_old;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> zabbix.history_log_old;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> zabbix.history_str_old;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> zabbix.history_text_old;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> zabbix.history_uint_old;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> zabbix.trends_old;</span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> zabbix.trends_uint_old;</span><br></pre></td></tr></table></figure>
+<h1 id="禁用Zabbix的Housekeeping"><a href="#禁用Zabbix的Housekeeping" class="headerlink" title="禁用Zabbix的Housekeeping"></a>禁用Zabbix的Housekeeping</h1><p>进行表分区后，通过删除表的历史分区即可清除历史数据，而Zabbix的Housekeeping默认会每隔一小时执行清除历史数据操作，所以需要关闭Housekeeping的定时清理任务。</p>
+<p>进入Zabbix菜单：Administration -&gt; General，选择右上角下拉菜单的“Housekeeping”，取消勾选“History”和“Trends”栏目下的“Enable internal housekeeping”，保存既可。</p>
+<h1 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h1><ul>
+<li>Zabbix官方文档：<br><a href="http://zabbix.org/wiki/Docs/howto/mysql_partition" target="_blank" rel="noopener">http://zabbix.org/wiki/Docs/howto/mysql_partition</a></li>
+<li>处理Zabbix历史数据库办法二——使用MySQL表分区：<br><a href="http://john88wang.blog.51cto.com/2165294/1771557" target="_blank" rel="noopener">http://john88wang.blog.51cto.com/2165294/1771557</a></li>
+<li>迁移Zabbix数据库到TokuDB：<br><a href="http://imysql.com/2014/06/24/migrate-zabbix-db-to-tokudb.shtml" target="_blank" rel="noopener">http://imysql.com/2014/06/24/migrate-zabbix-db-to-tokudb.shtml</a></li>
+</ul>
+
+      
+    </div>
+
+    
+      
+
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\12\create_and_drop_partitions_for_zabbix_tables_on_schedule_by_mysql_event\" rel="bookmark">使用event为Zabbix定期新增与删除分区</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\03\migrate_mysql_to_mariadb\" rel="bookmark">MySQL迁移到MariaDB</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\09\how_to_deal_with_xtrabackup_error_log_block_numbers_mismatch\" rel="bookmark">XtraBackup error：log block numbers mismatch分析处理</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/static/other_images/wechat_pay-tyoung.png" alt="Tyoung WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/static/other_images/alipay-tyoung.png" alt="Tyoung Alipay">
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author: </strong>Tyoung</li>
+  <li class="post-copyright-link">
+    <strong>Post link:</strong>
+    <a href="https://db.tyoung.me/2016/12/using_tokudb_and_partition_for_zabbix_tables/" title="Zabbix数据表使用TokuDB引擎及分区表">https://db.tyoung.me/2016/12/using_tokudb_and_partition_for_zabbix_tables/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+            <a href="/tags/MariaDB/" rel="tag"># MariaDB</a>
+          
+            <a href="/tags/TokuDB/" rel="tag"># TokuDB</a>
+          
+            <a href="/tags/Zabbix/" rel="tag"># Zabbix</a>
+          
+            <a href="/tags/分区表/" rel="tag"># 分区表</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/11/enable_tokudb_for_mariadb/" rel="next" title="MariaDB开启TokuDB存储引擎">
+                <i class="fa fa-chevron-left"></i> MariaDB开启TokuDB存储引擎
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/12/create_and_drop_partitions_for_zabbix_tables_on_schedule_by_mysql_event/" rel="prev" title="使用event为Zabbix定期新增与删除分区">
+                使用event为Zabbix定期新增与删除分区 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/static/other_images/avatar.jpg" alt="Tyoung">
+            
+              <p class="site-author-name" itemprop="name">Tyoung</p>
+              <p class="site-description motion-element" itemprop="description">纸上得来终觉浅，绝知此事要躬行。</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">15</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/tyoungcn" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.linkedin.com/in/tyoungcn" target="_blank" title="LinkedIn"><i class="fa fa-fw fa-linkedin-square"></i>LinkedIn</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#应用场景"><span class="nav-number">1.</span> <span class="nav-text">应用场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#系统环境"><span class="nav-number">2.</span> <span class="nav-text">系统环境</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#开启TokuDB引擎"><span class="nav-number">3.</span> <span class="nav-text">开启TokuDB引擎</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#修改存储引擎及开启分区表"><span class="nav-number">4.</span> <span class="nav-text">修改存储引擎及开启分区表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#注意事项"><span class="nav-number">4.1.</span> <span class="nav-text">注意事项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#重建表结构"><span class="nav-number">4.2.</span> <span class="nav-text">重建表结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#导出表数据"><span class="nav-number">4.3.</span> <span class="nav-text">导出表数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#导入表数据"><span class="nav-number">4.4.</span> <span class="nav-text">导入表数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#删除旧表"><span class="nav-number">4.5.</span> <span class="nav-text">删除旧表</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#禁用Zabbix的Housekeeping"><span class="nav-number">5.</span> <span class="nav-text">禁用Zabbix的Housekeeping</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文档"><span class="nav-number">6.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2015 &mdash; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-database"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Tyoung</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.0.6"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.0.6"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.0.6"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.0.6"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+    <script id="dsq-count-scr" src="https://tyoungcn.disqus.com/count.js" async></script>
+  
+
+  
+    <script type="text/javascript">
+      var disqus_config = function () {
+        this.page.url = 'https://db.tyoung.me/2016/12/using_tokudb_and_partition_for_zabbix_tables/';
+        this.page.identifier = '2016/12/using_tokudb_and_partition_for_zabbix_tables/';
+        this.page.title = 'Zabbix数据表使用TokuDB引擎及分区表';
+      };
+      function loadComments () {
+        var d = document, s = d.createElement('script');
+        s.src = 'https://tyoungcn.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      }
+      
+        $(function () {
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          if (offsetTop <= 0) {
+            // load directly when there's no a scrollbar
+            loadComments();
+          } else {
+            $(window).on('scroll.disqus_scroll', function () {
+              var scrollTop = document.documentElement.scrollTop;
+              if (scrollTop >= offsetTop) {
+                $(window).off('.disqus_scroll');
+                loadComments();
+              }
+            });
+          }
+        });
+      
+    </script>
+  
+
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/algolia-instant-search/instantsearch.min.css">
+
+  
+  
+  <script src="/lib/algolia-instant-search/instantsearch.min.js"></script>
+  
+
+  <script src="/js/src/algolia-search.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

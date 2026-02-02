@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>https://db.tyoung.me/about/index.html</loc>
+    
+    <lastmod>2026-02-02T17:37:31.585Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://db.tyoung.me/2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/</loc>
+    
+    <lastmod>2020-04-21T15:15:49.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://db.tyoung.me/2016/06/mysql_server_startup_programs_and_mutiple_mysql_instances/</loc>
+    
+    <lastmod>2020-04-21T15:15:49.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://db.tyoung.me/2016/09/how_to_deal_with_xtrabackup_error_log_block_numbers_mismatch/</loc>
+    
+    <lastmod>2020-04-21T15:15:49.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://db.tyoung.me/2016/09/usage_of_pt-table-checksum_and_replication_consistency_check/</loc>
+    
+    <lastmod>2020-04-21T15:15:49.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://db.tyoung.me/2016/11/enable_tokudb_for_mariadb/</loc>
+    
+    <lastmod>2020-04-21T15:15:49.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://db.tyoung.me/categories/index.html</loc>
+    
+    <lastmod>2020-04-21T15:15:49.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://db.tyoung.me/2016/12/create_and_drop_partitions_for_zabbix_tables_on_schedule_by_mysql_event/</loc>
+    
+    <lastmod>2020-04-21T15:15:49.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://db.tyoung.me/2016/12/using_tokudb_and_partition_for_zabbix_tables/</loc>
+    
+    <lastmod>2020-04-21T15:15:49.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://db.tyoung.me/tags/index.html</loc>
+    
+    <lastmod>2020-04-21T15:15:49.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://db.tyoung.me/2016/06/install_and_initialize_mysql/</loc>
+    
+    <lastmod>2020-04-21T15:15:48.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://db.tyoung.me/2016/03/migrate_mysql_to_mariadb/</loc>
+    
+    <lastmod>2020-04-21T15:15:48.000Z</lastmod>
+    
+  </url>
+  
+</urlset>

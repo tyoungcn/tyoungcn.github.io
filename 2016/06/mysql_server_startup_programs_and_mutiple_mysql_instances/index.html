@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.0.6" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16-next.png?v=6.0.6">
+
+
+  <link rel="mask-icon" href="/logo.svg?v=6.0.6" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.0.6',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '65YBN7EK61',
+      apiKey: '249c071ab47e1ab1c0d5c9c8930a9aba',
+      indexName: 'db.tyoung.me',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="MySQL启动方式mysqld启动方式：  本文假设已添加MySQL安装目录/usr/local/mysql/bin至系统环境变量PATH所以在执行MySQL相关命令时，不再切换到MySQL安装目录，或者使用完整路径。  1234shell &amp;gt; mysqld --user=mysql &amp;amp;[1] 230462016-06-24 22:57:33 0 [Note] mysqld (mys">
+<meta name="keywords" content="MySQL,MySQL启动方式,MySQL多实例">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL启动方式及多实例">
+<meta property="og:url" content="https://db.tyoung.me/2016/06/mysql_server_startup_programs_and_mutiple_mysql_instances/index.html">
+<meta property="og:site_name" content="Tyoung&#39;s Blog">
+<meta property="og:description" content="MySQL启动方式mysqld启动方式：  本文假设已添加MySQL安装目录/usr/local/mysql/bin至系统环境变量PATH所以在执行MySQL相关命令时，不再切换到MySQL安装目录，或者使用完整路径。  1234shell &amp;gt; mysqld --user=mysql &amp;amp;[1] 230462016-06-24 22:57:33 0 [Note] mysqld (mys">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2020-04-21T15:15:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL启动方式及多实例">
+<meta name="twitter:description" content="MySQL启动方式mysqld启动方式：  本文假设已添加MySQL安装目录/usr/local/mysql/bin至系统环境变量PATH所以在执行MySQL相关命令时，不再切换到MySQL安装目录，或者使用完整路径。  1234shell &amp;gt; mysqld --user=mysql &amp;amp;[1] 230462016-06-24 22:57:33 0 [Note] mysqld (mys">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Tyoung's Blog" type="application/atom+xml">
+
+
+
+
+  <link rel="canonical" href="https://db.tyoung.me/2016/06/mysql_server_startup_programs_and_mutiple_mysql_instances/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>MySQL启动方式及多实例 | Tyoung's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"> 
+
+<div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Tyoung's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">DBA之路</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+          
+  <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives</a>
+</li>
+
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  
+  <div class="algolia-popup popup search-popup">
+    <div class="algolia-search">
+      <div class="algolia-search-input-icon">
+        <i class="fa fa-search"></i>
+      </div>
+      <div class="algolia-search-input" id="algolia-search-input"></div>
+    </div>
+
+    <div class="algolia-results">
+      <div id="algolia-stats"></div>
+      <div id="algolia-hits"></div>
+      <div id="algolia-pagination" class="algolia-pagination"></div>
+    </div>
+
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+  </div>
+
+
+
+
+    </div>
+  
+</nav>
+
+
+  
+
+
+
+ </div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://db.tyoung.me/2016/06/mysql_server_startup_programs_and_mutiple_mysql_instances/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Tyoung">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/static/other_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Tyoung's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MySQL启动方式及多实例</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2016-06-26T02:19:26+08:00">2016-06-26</time>
+            
+
+            
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/06/mysql_server_startup_programs_and_mutiple_mysql_instances/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/06/mysql_server_startup_programs_and_mutiple_mysql_instances/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="MySQL启动方式"><a href="#MySQL启动方式" class="headerlink" title="MySQL启动方式"></a>MySQL启动方式</h1><h2 id="mysqld"><a href="#mysqld" class="headerlink" title="mysqld"></a>mysqld</h2><p>启动方式：</p>
+<blockquote>
+<p>本文假设已添加MySQL安装目录<code>/usr/local/mysql/bin</code>至系统环境变量PATH<br>所以在执行MySQL相关命令时，不再切换到MySQL安装目录，或者使用完整路径。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">shell &gt; mysqld --user=mysql &amp;</span><br><span class="line"></span><br><span class="line">[1] 23046</span><br><span class="line">2016-06-24 22:57:33 0 [Note] mysqld (mysqld 5.6.29-log) starting as process 23046 ...</span><br></pre></td></tr></table></figure>
+<a id="more"></a>
+<ol>
+<li><code>mysqld</code>，即MySQL服务器。MySQL安装过程中，很多工作是由<code>mysqld</code>来完成的。</li>
+<li>使用<code>mysqld</code>启动MySQL服务器之后，系统仅有一个<code>mysqld</code>进程。如下：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; ps aux | grep mysqld</span><br><span class="line"></span><br><span class="line">mysql    23046  0.2  9.6 780496 48480 pts/0    Sl   22:57   0:00 mysqld --user=mysql</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="mysqld-safe"><a href="#mysqld-safe" class="headerlink" title="mysqld_safe"></a>mysqld_safe</h2><p>启动方式：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqld_safe --user=mysql &amp;</span><br><span class="line"></span><br><span class="line">[1] 23159</span><br><span class="line">160624 23:11:43 mysqld_safe Logging to <span class="string">'/data/mysql/mysql3376/data/error.log'</span>.</span><br><span class="line">160624 23:11:43 mysqld_safe Starting mysqld daemon with databases from /data/mysql/mysql3376/data</span><br></pre></td></tr></table></figure></p>
+<ol>
+<li><code>mysqld_safe</code>启动时会调用<code>mysqld</code>来启动MySQL服务器</li>
+<li><code>mysqld_safe</code>是<code>mysqld</code>的守护进程，添加了一些安全特性，当MySQL服务器出现错误时会重启<code>mysqld</code>。</li>
+<li>使用<code>mysqld_safe</code>启动MySQL服务器之后，系统有两个进程：<code>mysqld</code>和<code>mysqld_safe</code>。如下：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; ps aux | grep mysqld</span><br><span class="line"></span><br><span class="line">  root      2892  0.1  0.2 106232  1400 pts/0    S    11:43   0:00 /bin/sh /usr/<span class="built_in">local</span>/mysql/bin/mysqld_safe --user=mysql</span><br><span class="line">  mysql     3934  0.1  9.6 780496 48472 pts/0    Sl   11:43   0:00 /usr/<span class="built_in">local</span>/mysql/bin/mysqld --basedir=/usr/<span class="built_in">local</span>/mysql --datadir=/data/mysql/mysql3376/data --plugin-dir=/usr/<span class="built_in">local</span>/mysql/lib/plugin --user=mysql --<span class="built_in">log</span>-error=/data/mysql/mysql3376/data/error.log --pid-file=/data/mysql/mysql3376/data/node601.pid --socket=/tmp/mysql3376.sock --port=3376</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="mysql-server"><a href="#mysql-server" class="headerlink" title="mysql.server"></a>mysql.server</h2><p>启动方式：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 启动MySQL</span></span><br><span class="line">shell&gt; mysql.server start</span><br><span class="line"></span><br><span class="line"><span class="comment"># 关闭MySQL</span></span><br><span class="line">shell&gt; mysql.server stop</span><br></pre></td></tr></table></figure></p>
+<ol>
+<li><code>mysql.server</code>是一个SHELL脚本，通过调用<code>mysqld_safe</code>来启动MySQL；</li>
+<li>使用RPM或其他的Linux系统的包管理器安装MySQL时，<code>mysql.server</code>通常会被安装在<code>/etc/init.d</code>路径下，文件名为<code>mysql</code>或<code>mysqld</code>；</li>
+<li><p>使用二进制包或源码安装时，<code>mysql.server</code>在MySQL安装目录的<code>support-files</code>下，可以手动将其复制到<code>/etc/init.d</code>路径下；</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; cp mysql.server /etc/init.d/mysql</span><br><span class="line">shell&gt; chmod +x /etc/init.d/mysql</span><br></pre></td></tr></table></figure>
+<p>此时也可以使用以下命令来启动和关闭MySQL</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 启动</span></span><br><span class="line">shell&gt; service mysql start</span><br><span class="line"><span class="comment"># shell&gt; /etc/init.d/mysql start</span></span><br><span class="line"><span class="comment"># 关闭</span></span><br><span class="line">shell&gt; service mysql stop</span><br><span class="line"><span class="comment"># shell&gt; /etc/init.d/mysql stop</span></span><br><span class="line"><span class="comment"># 重启</span></span><br><span class="line">shell&gt; service mysql restart</span><br><span class="line"><span class="comment"># shell&gt; /etc/init.d/mysql restart</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>使用mysql.server启动MySQL服务器之后，系统有两个进程：<code>mysqld</code>和<code>mysqld_safe</code>。如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; ps aux | grep mysqld</span><br><span class="line"></span><br><span class="line">root      4453  0.2  0.2  11472  1388 pts/0    S    12:41   0:00 /bin/sh /usr/<span class="built_in">local</span>/mysql/bin/mysqld_safe --datadir=/data/mysql/mysql3376/data --pid-file=/data/mysql/mysql3376/data/node601.pid</span><br><span class="line">mysql     5508  0.3  9.6 780496 48480 pts/0    Sl   12:41   0:00 /usr/<span class="built_in">local</span>/mysql/bin/mysqld --basedir=/usr/<span class="built_in">local</span>/mysql --datadir=/data/mysql/mysql3376/data --plugin-dir=/usr/<span class="built_in">local</span>/mysql/lib/plugin --user=mysql --<span class="built_in">log</span>-error=/data/mysql/mysql3376/data/error.log --pid-file=/data/mysql/mysql3376/data/node601.pid --socket=/tmp/mysql3376.sock --port=3376</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>以上为使用<code>mysqld</code>、<code>mysqld_safe</code>、<code>mysql.server</code>进行MySQL单个实例的启动，使用<code>[mysqld_multi]</code>进行MySQL多实例的启动，将会在本文后面进行介绍。</p>
+<h1 id="MySQL配置文件"><a href="#MySQL配置文件" class="headerlink" title="MySQL配置文件"></a>MySQL配置文件</h1><p>在介绍MySQL多实例之前，先介绍下MySQL配置文件。</p>
+<ol>
+<li><p>在启动MySQL时，若没有在命令行显式指定配置文件的路径，默认情况下，MySQL会从以下位置依次读取配置文件。并且，后读取的配置文件中的参数会优先于其前面的配置文件的参数生效。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">/etc/my.cnf</span><br><span class="line">/etc/mysql/my.cnf</span><br><span class="line">/usr/<span class="built_in">local</span>/mysql/etc/my.cnf</span><br><span class="line">~/.my.cnf</span><br></pre></td></tr></table></figure>
+<p>可以通过以下命令查看MySQL默认读取的配置文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqld --verbose --<span class="built_in">help</span> | grep -A 5 <span class="string">'Default options'</span></span><br><span class="line"></span><br><span class="line">2016-06-25 12:50:43 0 [Note] mysqld (mysqld 5.6.29-log) starting as process 5602 ...</span><br><span class="line">2016-06-25 12:50:43 5602 [Note] Plugin <span class="string">'FEDERATED'</span> is disabled.</span><br><span class="line">Default options are <span class="built_in">read</span> from the following files <span class="keyword">in</span> the given order:</span><br><span class="line">/etc/my.cnf /etc/mysql/my.cnf /usr/<span class="built_in">local</span>/mysql/etc/my.cnf ~/.my.cnf</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>MySQL配置文件由一个或多个group组成，每个group的名称为要设置参数的MySQL程序的名称或者组名。</p>
+<ul>
+<li>常见的group有：<code>[mysqld]</code>、<code>[mysql]</code>、<code>[client]</code>等。</li>
+</ul>
+</li>
+<li>以MySQL程序命名的group包含的参数，对该程序生效。比如：<ul>
+<li><code>[mysqld]</code>、<code>[mysql]</code>下的参数分别对<code>mysqld</code>服务器程序和<code>mysql</code>客户端程序生效；</li>
+<li><code>[mysqldump]</code>下的参数对mysqldump程序生效；</li>
+<li>等等…</li>
+</ul>
+</li>
+<li><code>[client]</code>分组下的参数，对所有的MySQL客户端程序生效。<ul>
+<li>如果某个参数不能被所有的MySQL客户端程序识别，不要把该参数放在<code>[client]</code>分组下。否则，会引起不能识别该参数的程序报错并退出。</li>
+</ul>
+</li>
+<li>MySQL常用程序读取的配置文件中group名称：<ol>
+<li>mysql：<code>[mysql]</code>、<code>[client]</code></li>
+<li>mysqld：<code>[mysqld]</code>、<code>[server]</code></li>
+<li>mysqld_safe：<code>[mysqld]</code>、 <code>[server]</code>、<code>[mysqld_safe]</code>；为了向后兼容，也读取<code>[safe_mysqld]</code>分组下的参数；</li>
+<li>mysql.server：<code>[mysql.server]</code>、<code>[mysqld]</code>；为了向后兼容，也读取<code>[mysql_server]</code>下的参数；</li>
+</ol>
+</li>
+</ol>
+<h1 id="MySQL多实例"><a href="#MySQL多实例" class="headerlink" title="MySQL多实例"></a>MySQL多实例</h1><h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><ol>
+<li>在同一台服务器上，不同的业务使用不同的实例，互不影响；</li>
+<li>MySQL服务器随着连接数的上升，性能会下降，可以将连接数比较多的单个实例拆分成多个实例；</li>
+<li>多实例在互联网公司比较常用；</li>
+</ol>
+<h2 id="多实例参数"><a href="#多实例参数" class="headerlink" title="多实例参数"></a>多实例参数</h2><p>MySQL多个实例的以下参数应保持不同：</p>
+<ol>
+<li>数据目录：<code>datadir=dir_name</code></li>
+<li>端口：<code>port=port_num</code></li>
+<li>socket文件名称：<code>socket=file_name</code></li>
+<li>pid文件名称：<code>pid-file=file_name</code></li>
+<li>一些日志的名称和路径<ol>
+<li>通用查询日志：<code>general_log_file=file_name</code></li>
+<li>二进制日志：<code>log-bin=file_name</code></li>
+<li>慢查询日志：<code>slow_query_log_file=file_name</code></li>
+<li>错误日志：<code>log-error=file_name</code></li>
+</ol>
+</li>
+</ol>
+<p>默认情况下，pid文件、以及以上各种日志文件，在各实例的数据目录下面，若已设置<code>datadir</code>为不同的目录，可不再显式设置这些选项。</p>
+<p>设置<code>tmpdir</code>为不同的目录，可以方便的识别临时文件是由哪些MySQL实例产生的。当然，这并不是必须要设置的。</p>
+<h2 id="new_instance">安装多实例</h2>
+
+<p>参照<a href="/2016/06/install_and_initialize_mysql">《MySQL安装和初始化》</a>一文的介绍，现有系统已安装一个端口为<code>3376</code>的实例，在此基础上新增加一个端口为<code>3377</code>的实例。</p>
+<ol>
+<li><p>关键参数对比</p>
+<ol>
+<li><p>端口为3376的实例的参数：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">port = 3376</span><br><span class="line">socket = /tmp/mysql3376.sock</span><br><span class="line">datadir = /data/mysql/mysql3376/data</span><br><span class="line">tmpdir = /data/mysql/mysql3376/tmp</span><br><span class="line"><span class="built_in">log</span>-bin = /data/mysql/mysql3376/logs/mysql-bin</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>端口为3377的实例的参数：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">port = 3377</span><br><span class="line">socket = /tmp/mysql3377.sock</span><br><span class="line">datadir = /data/mysql/mysql3377/data</span><br><span class="line">tmpdir = /data/mysql/mysql3377/tmp</span><br><span class="line"><span class="built_in">log</span>-bin = /data/mysql/mysql3377/logs/mysql-bin</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+<li><p>新建目录</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mkdir -pv /data/mysql/mysql3377/&#123;data,logs,tmp&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改配置文件</p>
+<ul>
+<li><p>将3376实例的配置文件复制到3377的目录下，并批量修改配置文件中的<code>3376</code>为<code>3377</code>。<br>由于以上各参数值都是由实例相应的端口组成，所以这里只需要替换配置文件中的端口号，即可达到不同实例不同的参数。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; cp /etc/my.cnf /data/mysql/mysql3377/my3377.cnf</span><br><span class="line">shell&gt; <span class="built_in">cd</span> /data/mysql/mysql3377</span><br><span class="line">shell&gt; sed -i <span class="string">'s/3376/3377/g'</span> my3377.cnf</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>替换之后配置文件的参数如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; grep 3377 my3377.cnf</span><br><span class="line"></span><br><span class="line"><span class="comment"># client</span></span><br><span class="line">port            = 3377</span><br><span class="line">socket          = /tmp/mysql3377.sock</span><br><span class="line"><span class="comment"># mysqld</span></span><br><span class="line">port            = 3377</span><br><span class="line">datadir         = /data/mysql/mysql3377/data</span><br><span class="line">tmpdir          = /data/mysql/mysql3377/tmp</span><br><span class="line">socket          = /tmp/mysql3377.sock</span><br><span class="line"><span class="built_in">log</span>-bin     = /data/mysql/mysql3377/logs/mysql-bin</span><br><span class="line">server-id       =1613377</span><br><span class="line">innodb_data_home_dir = /data/mysql/mysql3377/data</span><br><span class="line">innodb_log_group_home_dir = /data/mysql/mysql3377/logs</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>修改目录权限</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; chown -R mysql:mysql /data/mysql/mysql3377</span><br><span class="line">shell&gt; ll /data/mysql/mysql3377</span><br><span class="line"></span><br><span class="line">total 4</span><br><span class="line">drwxr-xr-x 2 mysql mysql    6 Jun 25 16:56 data</span><br><span class="line">drwxr-xr-x 2 mysql mysql    6 Jun 25 16:56 logs</span><br><span class="line">-rwxr-xr-x 1 mysql mysql 3020 Jun 25 17:06 my3377.cnf</span><br><span class="line">drwxr-xr-x 2 mysql mysql    6 Jun 25 16:56 tmp</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>初始化MySQL 3377实例</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; <span class="built_in">cd</span> /usr/<span class="built_in">local</span>/mysql/</span><br><span class="line">shell&gt; ./scripts/mysql_install_db --defaults-file=/data/mysql/mysql3377/my3377.cnf --user=mysql</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动3377实例</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqld --defaults-file=/data/mysql/mysql3377/my3377.cnf --user=mysql &amp;</span><br><span class="line"></span><br><span class="line">[2] 6961</span><br><span class="line">2016-06-25 17:40:20 0 [Note] mysqld (mysqld 5.6.29-log) starting as process 6961 ...</span><br></pre></td></tr></table></figure>
+<p>查看后台进程，已启动两个MySQL实例：<code>3376</code>和<code>3377</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; netstat -nalp | grep mysqld</span><br><span class="line">tcp        0      0 :::3376                     :::*                        LISTEN      6857/mysqld         </span><br><span class="line">tcp        0      0 :::3377                     :::*                        LISTEN      6961/mysqld         </span><br><span class="line">unix  2      [ ACC ]     STREAM     LISTENING     23304  6857/mysqld         /tmp/mysql3376.sock</span><br><span class="line">unix  2      [ ACC ]     STREAM     LISTENING     23462  6961/mysqld         /tmp/mysql3377.sock</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>关闭3377实例</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqladmin -S /tmp/mysql3377.sock -vvv shutdown</span><br><span class="line"></span><br><span class="line">Shutdown signal sent to server;  Waiting <span class="keyword">for</span> pid file to disappear</span><br><span class="line">[2]+  Done                    mysqld --defaults-file=/data/mysql/mysql3377/my3377.cnf --user=mysql</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="mysqld-multi"><a href="#mysqld-multi" class="headerlink" title="mysqld_multi"></a>mysqld_multi</h2><p>从以上配置3377实例的过程可以看出，可以为每个实例指定单独的配置文件。在启动时，指定对应的配置文件（<code>--defaults-file</code>）；在关闭时，指定实例对应的socket（或者ip和端口），即可分别管理每一个实例。</p>
+<p>而多个实例的管理，也可以采用另一种方法：各个实例的参数都在同一个配置文件里配置，使用<code>mysqld_multi</code>管理这些实例。</p>
+<blockquote>
+<p>这里的“配置文件”可以是默认的<code>/etc/my.cnf</code>，也可以是由<code>--defaults-file</code>指定的。</p>
+</blockquote>
+<h3 id="mysqld-multi相关配置文件"><a href="#mysqld-multi相关配置文件" class="headerlink" title="mysqld_multi相关配置文件"></a>mysqld_multi相关配置文件</h3><p>关于mysqld_multi的配置例子，可以使用命令<code>mysqld_multi --example</code>查看，如下为其中的一部分：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">shell &gt; mysqld_multi --example</span><br><span class="line"></span><br><span class="line">[mysqld_multi]</span><br><span class="line">mysqld     = /usr/<span class="built_in">local</span>/mysql/bin/mysqld_safe</span><br><span class="line">mysqladmin = /usr/<span class="built_in">local</span>/mysql/bin/mysqladmin</span><br><span class="line">user       = multi_admin</span><br><span class="line">password   = my_password</span><br><span class="line"></span><br><span class="line">[mysqld2]</span><br><span class="line">socket     = /tmp/mysql.sock2</span><br><span class="line">port       = 3307</span><br><span class="line">pid-file   = /usr/<span class="built_in">local</span>/mysql/data2/hostname.pid2</span><br><span class="line">datadir    = /usr/<span class="built_in">local</span>/mysql/data2</span><br><span class="line">language   = /usr/<span class="built_in">local</span>/mysql/share/mysql/english</span><br><span class="line">user       = unix_user1</span><br><span class="line"></span><br><span class="line">[mysqld3]</span><br><span class="line">mysqld     = /path/to/mysqld_safe</span><br><span class="line">ledir      = /path/to/mysqld-binary/</span><br><span class="line">mysqladmin = /path/to/mysqladmin</span><br><span class="line">socket     = /tmp/mysql.sock3</span><br><span class="line">port       = 3308</span><br><span class="line">pid-file   = /usr/<span class="built_in">local</span>/mysql/data3/hostname.pid3</span><br><span class="line">datadir    = /usr/<span class="built_in">local</span>/mysql/data3</span><br><span class="line">language   = /usr/<span class="built_in">local</span>/mysql/share/mysql/swedish</span><br><span class="line">user       = unix_user2</span><br></pre></td></tr></table></figure></p>
+<p><code>[mysqld_multi]</code>分组下的参数，对mysqld_multi程序自身生效；<code>[mysqldN]</code>分组下的参数，对特定的实例生效（N为正整数）。</p>
+<ol>
+<li><p><code>[mysqld_multi]</code>分组相关的参数选项如下：</p>
+<ol>
+<li><code>mysqld=prog_name</code><ul>
+<li>用于启动MySQL的程序，可以是<code>mysqld</code>，也可以是<code>mysqld_safe</code></li>
+<li>当mysqld指定为mysqld或者mysqld_safe时，启动实例时，会分别读取这两个程序相应的group的配置文件；</li>
+</ul>
+</li>
+<li><code>mysqladmin=prog_name</code><ul>
+<li>用于关闭MySQL服务的<code>mysqladmin</code>程序路径</li>
+</ul>
+</li>
+<li><p><code>user=user_name</code></p>
+<ul>
+<li>调用<code>mysqladmin</code>时使用的MySQL用户名</li>
+<li>每一个被管理的实例中都需要有此用户名，且密码相同（<em>如果密码不同，无法同时关闭多个实例</em>），且具有<code>SHUTDOWN</code>权限</li>
+<li>可以使用以下命令在每一个实例中新建该用户<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; CREATE USER 'multi_admin'@'localhost' IDENTIFIED BY 'multipass';</span><br><span class="line">mysql&gt; GRANT SHUTDOWN ON *.* TO 'multi_admin'@'localhost';</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p><code>password=password</code></p>
+<ul>
+<li>调用<code>mysqladmin</code>时，所使用的user的密码</li>
+</ul>
+</li>
+<li><code>log=file_name</code><ul>
+<li>用来记录mysqld_muti的启动日志</li>
+</ul>
+</li>
+</ol>
+</li>
+<li>[mysqld<strong>N</strong>]<ul>
+<li>该分组的参数，对特定的MySQL实例生效</li>
+<li><code>[mysqld]</code>分组下可用的参数，都可以针对各个实例在<code>[mysqldN]</code>分组下再特别指定</li>
+<li>N为正整数，建议N为端口号，便于区分实例的配置文件</li>
+</ul>
+</li>
+<li>[mysqld]、[mysqld_safe]<ul>
+<li>通用设置，对所有的实例都生效</li>
+</ul>
+</li>
+</ol>
+<h3 id="配置本文的3376、3377实例"><a href="#配置本文的3376、3377实例" class="headerlink" title="配置本文的3376、3377实例"></a>配置本文的3376、3377实例</h3><p>在<code>/etc/my.cnf</code>文件添加<code>[mysqld_multi]</code>、<code>[mysqld3376]</code>、<code>[mysqld3377]</code>分组的参数选项，如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">[mysqld_multi]</span><br><span class="line">mysqld = /usr/<span class="built_in">local</span>/mysql/bin/mysqld</span><br><span class="line">mysqladmin = /usr/<span class="built_in">local</span>/mysql/bin/mysqladmin</span><br><span class="line">user = multi_admin</span><br><span class="line">password = multipass</span><br><span class="line"><span class="built_in">log</span> = /data/mysql/multi.log</span><br><span class="line"></span><br><span class="line">[mysqld3376]</span><br><span class="line">port = 3376</span><br><span class="line">socket = /tmp/mysql3376.sock</span><br><span class="line">datadir = /data/mysql/mysql3376/data</span><br><span class="line">tmpdir = /data/mysql/mysql3376/tmp</span><br><span class="line"><span class="built_in">log</span>-bin = /data/mysql/mysql3376/logs/mysql-bin</span><br><span class="line">server-id = 1613376</span><br><span class="line">innodb_data_home_dir = /data/mysql/mysql3376/data</span><br><span class="line">innodb_log_group_home_dir = /data/mysql/mysql3376/logs</span><br><span class="line"><span class="comment"># 必须在此指定user=mysql（mysql为Linux系统用户）</span></span><br><span class="line"><span class="comment"># 或者，在[mysqld]分组下指定全局user=mysql，否则无法启动MySQL</span></span><br><span class="line">user = mysql</span><br><span class="line"></span><br><span class="line">[mysqld3377]</span><br><span class="line">port = 3377</span><br><span class="line">socket = /tmp/mysql3377.sock</span><br><span class="line">datadir = /data/mysql/mysql3377/data</span><br><span class="line">tmpdir = /data/mysql/mysql3377/tmp</span><br><span class="line"><span class="built_in">log</span>-bin = /data/mysql/mysql3377/logs/mysql-bin</span><br><span class="line">server-id = 1613377</span><br><span class="line">innodb_data_home_dir = /data/mysql/mysql3377/data</span><br><span class="line">innodb_log_group_home_dir = /data/mysql/mysql3377/logs</span><br><span class="line">user = mysql</span><br></pre></td></tr></table></figure></p>
+<h3 id="mysqld-multi启动-关闭MySQL实例的方式"><a href="#mysqld-multi启动-关闭MySQL实例的方式" class="headerlink" title="mysqld_multi启动/关闭MySQL实例的方式"></a>mysqld_multi启动/关闭MySQL实例的方式</h3><blockquote>
+<p>可以用来启动/关闭一个、多个或某个范围的实例<br>前提：已在配置文件中定义该实例对应分组的参数<code>[mysqldN]</code></p>
+</blockquote>
+<ol>
+<li><p>单个实例：<code>Ni</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqld_multi start Ni</span><br><span class="line">shell&gt; mysqld_multi stop Ni</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>多个实例：<code>Ni,Nj,...,Nk</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqld_multi start Ni,Nj,Nk</span><br><span class="line">shell&gt; mysqld_multi stop Ni,Nj,Nk</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>某个范围的多个实例：<code>Ni-Nj</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqld_multi start Ni-Nj</span><br><span class="line">shell&gt; mysqld_multi stop Ni-Nj</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>多个分开的实例和某个范围的多个实例：<code>Ni,...,Nj-Nk</code></p>
+<blockquote>
+<p>逗号<code>,</code>，破折号<code>-</code>前后不可以有空格，否则空格后面的字符将会被忽略</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqld_multi start Ni,Nj-Nk</span><br><span class="line">shell&gt; mysqld_multi stop Ni,Nj-Nk</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="启动-关闭本文的3376、3377实例"><a href="#启动-关闭本文的3376、3377实例" class="headerlink" title="启动/关闭本文的3376、3377实例"></a>启动/关闭本文的3376、3377实例</h3><ol>
+<li><p>启动3376实例</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqld_multi start 3376</span><br></pre></td></tr></table></figure>
+<p>查看3376实例的mysqld进程是否已启动：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; ps aux | grep mysqld</span><br><span class="line"></span><br><span class="line">mysql     9686  0.2  9.6 780496 48484 pts/3    Sl   01:42   0:00 /usr/<span class="built_in">local</span>/mysql/bin/mysqld --port=3376 --socket=/tmp/mysql3376.sock --datadir=/data/mysql/mysql3376/data --tmpdir=/data/mysql/mysql3376/tmp --<span class="built_in">log</span>-bin=/data/mysql/mysql3376/logs/mysql-bin --server-id=1613376 --innodb_data_home_dir=/data/mysql/mysql3376/data --innodb_log_group_home_dir=/data/mysql/mysql3376/logs</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>关闭3376实例</p>
+<ul>
+<li><strong>实际测试时，即使已经在配置文件的<code>[mysqld_multi]</code>分组下指定了password参数的值，关闭MySQL实例时，仍然会报密码错误。需要在命令行显式指定password的值，才能关闭实例。</strong>（原因未知）</li>
+<li><p><code>[mysqld_multi]</code>的log中报错信息如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Stopping MySQL servers</span><br><span class="line">Warning: Using a password on the <span class="built_in">command</span> line interface can be insecure.</span><br><span class="line">^G/usr/<span class="built_in">local</span>/mysql/bin/mysqladmin: connect to server at <span class="string">'localhost'</span> failed</span><br><span class="line">error: <span class="string">'Access denied for user '</span>multi_admin<span class="string">'@'</span>localhost<span class="string">' (using password: YES)'</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>使用以下命令关闭实例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqld_multi stop 3376 --password=multipass</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>同时启动3376、3377实例</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqld_multi start 3376,3377</span><br><span class="line">shell&gt; ps aux | grep mysqld</span><br><span class="line"></span><br><span class="line">mysql     9845  1.0  9.6 780496 48468 pts/3    Sl   01:53   0:00 /usr/<span class="built_in">local</span>/mysql/bin/mysqld --port=3376 --socket=/tmp/mysql3376.sock --datadir=/data/mysql/mysql3376/data --tmpdir=/data/mysql/mysql3376/tmp --<span class="built_in">log</span>-bin=/data/mysql/mysql3376/logs/mysql-bin --server-id=1613376 --innodb_data_home_dir=/data/mysql/mysql3376/data --innodb_log_group_home_dir=/data/mysql/mysql3376/logs</span><br><span class="line">mysql     9848  1.0  9.6 780496 48456 pts/3    Sl   01:53   0:00 /usr/<span class="built_in">local</span>/mysql/bin/mysqld --port=3377 --socket=/tmp/mysql3377.sock --datadir=/data/mysql/mysql3377/data --tmpdir=/data/mysql/mysql3377/tmp --<span class="built_in">log</span>-bin=/data/mysql/mysql3377/logs/mysql-bin --server-id=1613377 --innodb_data_home_dir=/data/mysql/mysql3377/data --innodb_log_group_home_dir=/data/mysql/mysql3377/logs</span><br></pre></td></tr></table></figure>
+<p>3376、3377这两个实例的进程已同时启动</p>
+</li>
+<li><p>同时关闭3376、3377实例</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqld_multi stop 3376,3377 --password=multipass</span><br><span class="line">shell&gt; ps aux | grep mysqld</span><br><span class="line"></span><br><span class="line">root      9958  0.0  0.1 103308   852 pts/3    S+   01:55   0:00 grep mysql</span><br></pre></td></tr></table></figure>
+<p>两实例的进程已同时被关闭。</p>
+</li>
+</ol>
+<h1 id="多实例安装——使用现有实例安装"><a href="#多实例安装——使用现有实例安装" class="headerlink" title="多实例安装——使用现有实例安装"></a>多实例安装——使用现有实例安装</h1><p><a href="#new_instance">第3节</a>中介绍的3377实例是全新安装的一个实例，安装完成后还需要进行初始化等操作。</p>
+<p>新的实例的安装也可以在原有实例的数据的基础上进行安装。下面介绍在3377实例的基础上，来安装一个新的3378实例。</p>
+<ol>
+<li><p>新建3378实例的目录</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mkdir -pv  /data/mysql/mysql3378</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>停止3377实例</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqladmin -vvv --socket=/tmp/mysql3377.sock shutdown</span><br><span class="line"></span><br><span class="line">Shutdown signal sent to server;  Waiting <span class="keyword">for</span> pid file to disappear</span><br><span class="line">[2]+  Done                    mysqld --defaults-file=/data/mysql/mysql3377/my3377.cnf</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>将3377实例的数据等目录复制到3378目录</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; cp -ar /data/mysql/mysql3377/* /data/mysql/mysql3378/</span><br><span class="line">shell&gt; <span class="built_in">cd</span> /data/mysql/mysql3378</span><br><span class="line">shell&gt; ll</span><br><span class="line"></span><br><span class="line">total 8</span><br><span class="line">drwxr-xr-x 4 mysql mysql  121 Jun 26 15:46 data</span><br><span class="line">drwxr-xr-x 2 mysql mysql 4096 Jun 26 15:45 logs</span><br><span class="line">-rwxr-xr-x 1 mysql mysql 3019 Jun 26 15:38 my3377.cnf</span><br><span class="line">drwxr-xr-x 2 mysql mysql    6 Jun 26 15:45 tmp</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改3378实例的配置文件：<code>datadir</code>、<code>socket</code>、<code>port</code>等</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; <span class="built_in">cd</span> /data/mysql/mysql3378</span><br><span class="line">shell&gt; mv my3377.cnf my3378.cnf</span><br><span class="line">shell&gt; sed -i <span class="string">'s/3377/3378/g'</span> my3378.cnf</span><br></pre></td></tr></table></figure>
+<p>修改后的配置信息如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; grep 3378  my3378.cnf</span><br><span class="line"></span><br><span class="line">port            = 3378</span><br><span class="line">socket          = /tmp/mysql3378.sock</span><br><span class="line">port            = 3378</span><br><span class="line">datadir         = /data/mysql/mysql3378/data</span><br><span class="line">tmpdir          = /data/mysql/mysql3378/tmp</span><br><span class="line">socket          = /tmp/mysql3378.sock</span><br><span class="line"><span class="built_in">log</span>-bin     = /data/mysql/mysql3378/logs/mysql-bin</span><br><span class="line">server-id       =1613378</span><br><span class="line">innodb_data_home_dir = /data/mysql/mysql3378/data</span><br><span class="line">innodb_log_group_home_dir = /data/mysql/mysql3378/logs</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除3378数据目录的<code>auto.cnf</code>文件</p>
+<blockquote>
+<p>此文件为MySQL自动生成的server-uuid信息，需保证每个实例的该信息不同。<br>删除此文件后，mysqld启动时会自动重新生成此文件。</p>
+<blockquote>
+<p>auto.cnf：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[auto]</span><br><span class="line">server-uuid=fccde147-3b71-11e6-967d-0800272bc1fa</span><br></pre></td></tr></table></figure>
+</blockquote>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; <span class="built_in">cd</span> /data/mysql/mysql3378/data/</span><br><span class="line">shell&gt; rm -f auto.cnf</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动3378实例</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; mysqld --defaults-file=/data/mysql/mysql3378/my3378.cnf --user=mysql &amp;</span><br><span class="line"></span><br><span class="line">[1] 3191</span><br><span class="line">2016-06-26 16:18:26 0 [Note] mysqld (mysqld 5.6.29-log) starting as process 3191 ...</span><br></pre></td></tr></table></figure>
+<p>确认实例是否启动成功：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; ps aux | grep mysqld</span><br><span class="line"></span><br><span class="line">mysql     3191  1.0  9.6 780496 48464 pts/2    Sl   16:18   0:00 mysqld --defaults-file=/data/mysql/mysql3378/my3378.cnf --user=mysql</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h1 id="附件"><a href="#附件" class="headerlink" title="附件"></a>附件</h1><ol>
+<li>3377实例单独的配置文件：<code>my3377.cnf</code><br>链接：<a href="http://pan.baidu.com/s/1nvlKAet" target="_blank" rel="noopener">http://pan.baidu.com/s/1nvlKAet</a> 密码：wv0o</li>
+<li>使用mysqld_multi管理多实例时的配置文件：<code>/etc/my.cnf</code><br>链接：<a href="http://pan.baidu.com/s/1kUBWQTh" target="_blank" rel="noopener">http://pan.baidu.com/s/1kUBWQTh</a> 密码：vv99</li>
+</ol>
+<h1 id="声明"><a href="#声明" class="headerlink" title="声明"></a>声明</h1><p>本文部分内容来自<strong>知数堂远程培训：</strong><a href="https://zhishuedu.taobao.com/" target="_blank" rel="noopener">https://zhishuedu.taobao.com/</a></p>
+
+      
+    </div>
+
+    
+      
+
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\03\migrate_mysql_to_mariadb\" rel="bookmark">MySQL迁移到MariaDB</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\06\install_and_initialize_mysql\" rel="bookmark">MySQL安装和初始化</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\09\how_to_deal_with_xtrabackup_error_log_block_numbers_mismatch\" rel="bookmark">XtraBackup error：log block numbers mismatch分析处理</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/static/other_images/wechat_pay-tyoung.png" alt="Tyoung WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/static/other_images/alipay-tyoung.png" alt="Tyoung Alipay">
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author: </strong>Tyoung</li>
+  <li class="post-copyright-link">
+    <strong>Post link:</strong>
+    <a href="https://db.tyoung.me/2016/06/mysql_server_startup_programs_and_mutiple_mysql_instances/" title="MySQL启动方式及多实例">https://db.tyoung.me/2016/06/mysql_server_startup_programs_and_mutiple_mysql_instances/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+            <a href="/tags/MySQL启动方式/" rel="tag"># MySQL启动方式</a>
+          
+            <a href="/tags/MySQL多实例/" rel="tag"># MySQL多实例</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/06/install_and_initialize_mysql/" rel="next" title="MySQL安装和初始化">
+                <i class="fa fa-chevron-left"></i> MySQL安装和初始化
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/09/how_to_deal_with_xtrabackup_error_log_block_numbers_mismatch/" rel="prev" title="XtraBackup error：log block numbers mismatch分析处理">
+                XtraBackup error：log block numbers mismatch分析处理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/static/other_images/avatar.jpg" alt="Tyoung">
+            
+              <p class="site-author-name" itemprop="name">Tyoung</p>
+              <p class="site-description motion-element" itemprop="description">纸上得来终觉浅，绝知此事要躬行。</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">15</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/tyoungcn" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.linkedin.com/in/tyoungcn" target="_blank" title="LinkedIn"><i class="fa fa-fw fa-linkedin-square"></i>LinkedIn</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL启动方式"><span class="nav-number">1.</span> <span class="nav-text">MySQL启动方式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#mysqld"><span class="nav-number">1.1.</span> <span class="nav-text">mysqld</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mysqld-safe"><span class="nav-number">1.2.</span> <span class="nav-text">mysqld_safe</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mysql-server"><span class="nav-number">1.3.</span> <span class="nav-text">mysql.server</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL配置文件"><span class="nav-number">2.</span> <span class="nav-text">MySQL配置文件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL多实例"><span class="nav-number">3.</span> <span class="nav-text">MySQL多实例</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#应用场景"><span class="nav-number">3.1.</span> <span class="nav-text">应用场景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#多实例参数"><span class="nav-number">3.2.</span> <span class="nav-text">多实例参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#new_instance"><span class="nav-number">3.3.</span> <span class="nav-text">安装多实例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mysqld-multi"><span class="nav-number">3.4.</span> <span class="nav-text">mysqld_multi</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#mysqld-multi相关配置文件"><span class="nav-number">3.4.1.</span> <span class="nav-text">mysqld_multi相关配置文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置本文的3376、3377实例"><span class="nav-number">3.4.2.</span> <span class="nav-text">配置本文的3376、3377实例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mysqld-multi启动-关闭MySQL实例的方式"><span class="nav-number">3.4.3.</span> <span class="nav-text">mysqld_multi启动/关闭MySQL实例的方式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#启动-关闭本文的3376、3377实例"><span class="nav-number">3.4.4.</span> <span class="nav-text">启动/关闭本文的3376、3377实例</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#多实例安装——使用现有实例安装"><span class="nav-number">4.</span> <span class="nav-text">多实例安装——使用现有实例安装</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#附件"><span class="nav-number">5.</span> <span class="nav-text">附件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#声明"><span class="nav-number">6.</span> <span class="nav-text">声明</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2015 &mdash; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-database"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Tyoung</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.0.6"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.0.6"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.0.6"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.0.6"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+    <script id="dsq-count-scr" src="https://tyoungcn.disqus.com/count.js" async></script>
+  
+
+  
+    <script type="text/javascript">
+      var disqus_config = function () {
+        this.page.url = 'https://db.tyoung.me/2016/06/mysql_server_startup_programs_and_mutiple_mysql_instances/';
+        this.page.identifier = '2016/06/mysql_server_startup_programs_and_mutiple_mysql_instances/';
+        this.page.title = 'MySQL启动方式及多实例';
+      };
+      function loadComments () {
+        var d = document, s = d.createElement('script');
+        s.src = 'https://tyoungcn.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      }
+      
+        $(function () {
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          if (offsetTop <= 0) {
+            // load directly when there's no a scrollbar
+            loadComments();
+          } else {
+            $(window).on('scroll.disqus_scroll', function () {
+              var scrollTop = document.documentElement.scrollTop;
+              if (scrollTop >= offsetTop) {
+                $(window).off('.disqus_scroll');
+                loadComments();
+              }
+            });
+          }
+        });
+      
+    </script>
+  
+
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/algolia-instant-search/instantsearch.min.css">
+
+  
+  
+  <script src="/lib/algolia-instant-search/instantsearch.min.js"></script>
+  
+
+  <script src="/js/src/algolia-search.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

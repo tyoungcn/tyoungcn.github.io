@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.0.6" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16-next.png?v=6.0.6">
+
+
+  <link rel="mask-icon" href="/logo.svg?v=6.0.6" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.0.6',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '65YBN7EK61',
+      apiKey: '249c071ab47e1ab1c0d5c9c8930a9aba',
+      indexName: 'db.tyoung.me',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="系统详情 系统：CentOS 6.7 数据库版本：5.6.29-log MySQL Community Server (GPL)  以下操作、介绍仅针对CentOS 6发行版本，其他发行版本的Linux可能有细微变化。">
+<meta name="keywords" content="MySQL,MySQL安装">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL安装和初始化">
+<meta property="og:url" content="https://db.tyoung.me/2016/06/install_and_initialize_mysql/index.html">
+<meta property="og:site_name" content="Tyoung&#39;s Blog">
+<meta property="og:description" content="系统详情 系统：CentOS 6.7 数据库版本：5.6.29-log MySQL Community Server (GPL)  以下操作、介绍仅针对CentOS 6发行版本，其他发行版本的Linux可能有细微变化。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2020-04-21T15:15:48.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL安装和初始化">
+<meta name="twitter:description" content="系统详情 系统：CentOS 6.7 数据库版本：5.6.29-log MySQL Community Server (GPL)  以下操作、介绍仅针对CentOS 6发行版本，其他发行版本的Linux可能有细微变化。">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Tyoung's Blog" type="application/atom+xml">
+
+
+
+
+  <link rel="canonical" href="https://db.tyoung.me/2016/06/install_and_initialize_mysql/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>MySQL安装和初始化 | Tyoung's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"> 
+
+<div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Tyoung's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">DBA之路</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+          
+  <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives</a>
+</li>
+
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  
+  <div class="algolia-popup popup search-popup">
+    <div class="algolia-search">
+      <div class="algolia-search-input-icon">
+        <i class="fa fa-search"></i>
+      </div>
+      <div class="algolia-search-input" id="algolia-search-input"></div>
+    </div>
+
+    <div class="algolia-results">
+      <div id="algolia-stats"></div>
+      <div id="algolia-hits"></div>
+      <div id="algolia-pagination" class="algolia-pagination"></div>
+    </div>
+
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+  </div>
+
+
+
+
+    </div>
+  
+</nav>
+
+
+  
+
+
+
+ </div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://db.tyoung.me/2016/06/install_and_initialize_mysql/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Tyoung">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/static/other_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Tyoung's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MySQL安装和初始化</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2016-06-21T16:19:23+08:00">2016-06-21</time>
+            
+
+            
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/06/install_and_initialize_mysql/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/06/install_and_initialize_mysql/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="系统详情"><a href="#系统详情" class="headerlink" title="系统详情"></a>系统详情</h1><ul>
+<li>系统：CentOS 6.7</li>
+<li>数据库版本：5.6.29-log MySQL Community Server (GPL)</li>
+</ul>
+<p><em>以下操作、介绍仅针对CentOS 6发行版本，其他发行版本的Linux可能有细微变化。</em></p>
+<a id="more"></a>
+<h1 id="安装方法介绍"><a href="#安装方法介绍" class="headerlink" title="安装方法介绍"></a>安装方法介绍</h1><p>MySQL安装方法主要有以下几种：</p>
+<ol>
+<li>二进制包安装（<code>Generic Binaries</code>）<ul>
+<li>安装方法较简单，且可以自定义安装目录</li>
+</ul>
+</li>
+<li>安装针对特定Linux发行版预编译好的软件包（<em>如CentOS的rpm软件包，Ubuntu的deb软件包等</em>）<ul>
+<li>使用此方法安装，一般需要先手动解决各软件包的依赖关系，比较麻烦</li>
+</ul>
+</li>
+<li>MySQL官方软件源安装（<em>一般，不同的Linux发行版对应不同的软件源，比如CentOS系统对应的是yum源</em>）<ul>
+<li>使用此方法安装比较简单，只需在系统添加软件源，再执行一条安装命令即可搞定（如：<code>yum install mysql-community-server</code>）</li>
+<li>但当在同一个系统，同时安装多个MySQL版本时，如果不清楚YUM源的安装路径及逻辑，容易造成混乱</li>
+</ul>
+</li>
+<li>编译源码安装<ul>
+<li>需要自己动手编译</li>
+<li>且对于新手来说，自己编译的MySQL未必会比官方已经编译好的二进制包/软件包好</li>
+<li>除非对于MySQL默认的功能、参数有个性化需求需要修改，不推荐编译安装</li>
+</ul>
+</li>
+</ol>
+<p>本文主要介绍使用二进制包安装MySQL，其他安装方法的详细操作，可参考官方文档：<a href="http://dev.mysql.com/doc/refman/5.6/en/installing.html" target="_blank" rel="noopener">http://dev.mysql.com/doc/refman/5.6/en/installing.html</a></p>
+<h1 id="下载MySQL二进制包"><a href="#下载MySQL二进制包" class="headerlink" title="下载MySQL二进制包"></a>下载MySQL二进制包</h1><h2 id="下载链接"><a href="#下载链接" class="headerlink" title="下载链接"></a>下载链接</h2><ul>
+<li>MySQL官方下载链接：<ul>
+<li>下载主页：<a href="http://dev.mysql.com/downloads/mysql/" target="_blank" rel="noopener">http://dev.mysql.com/downloads/mysql/</a></li>
+<li>5.6.29版本链接：<a href="http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.29-linux-glibc2.5-x86_64.tar.gz" target="_blank" rel="noopener">http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.29-linux-glibc2.5-x86_64.tar.gz</a></li>
+</ul>
+</li>
+<li>如果下载速度较慢，可以使用sohu镜像下载：  <ul>
+<li>下载主页：<a href="http://mirrors.sohu.com/mysql/MySQL-5.6/" target="_blank" rel="noopener">http://mirrors.sohu.com/mysql/MySQL-5.6/</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="下载MySQL"><a href="#下载MySQL" class="headerlink" title="下载MySQL"></a>下载MySQL</h2><p>可以在Windows系统下载后，上传到服务器；也可以直接在Linux服务器上执行以下命令，进行下载：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.29-linux-glibc2.5-x86_64.tar.gz</span><br></pre></td></tr></table></figure></p>
+<h1 id="安装MySQL，及进行初始化"><a href="#安装MySQL，及进行初始化" class="headerlink" title="安装MySQL，及进行初始化"></a>安装MySQL，及进行初始化</h1><blockquote>
+<p>以下命令需使用<strong>root权限</strong>执行。</p>
+</blockquote>
+<h2 id="新建程序安装目录"><a href="#新建程序安装目录" class="headerlink" title="新建程序安装目录"></a>新建程序安装目录</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mkdir -pv /opt/mysql</span><br></pre></td></tr></table></figure>
+<h2 id="解压安装包至安装目录"><a href="#解压安装包至安装目录" class="headerlink" title="解压安装包至安装目录"></a>解压安装包至安装目录</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar -xvzf mysql-5.6.29-linux-glibc2.5-x86_64.tar.gz -C /opt/mysql</span><br></pre></td></tr></table></figure>
+<h2 id="新建软链接mysql，链接至mysql-5-6-29-linux-glibc2-5-x86-64目录"><a href="#新建软链接mysql，链接至mysql-5-6-29-linux-glibc2-5-x86-64目录" class="headerlink" title="新建软链接mysql，链接至mysql-5.6.29-linux-glibc2.5-x86_64目录"></a>新建软链接mysql，链接至mysql-5.6.29-linux-glibc2.5-x86_64目录</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ln -sv /opt/mysql/mysql-5.6.29-linux-glibc2.5-x86_64 /usr/<span class="built_in">local</span>/mysql</span><br></pre></td></tr></table></figure>
+<h2 id="新建mysql用户和组"><a href="#新建mysql用户和组" class="headerlink" title="新建mysql用户和组"></a>新建mysql用户和组</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">groupadd mysql</span><br><span class="line">useradd -g mysql -r -s /sbin/nologin mysql</span><br></pre></td></tr></table></figure>
+<h2 id="新建MySQL数据、日志、tmp目录"><a href="#新建MySQL数据、日志、tmp目录" class="headerlink" title="新建MySQL数据、日志、tmp目录"></a>新建MySQL数据、日志、tmp目录</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 此处本人以MySQL端口3376为文件夹后缀，便于区分不同端口的MySQL实例的数据目录</span></span><br><span class="line"><span class="comment"># 一次性创建3个目录（逗号后面不能有空格），-p 递归创建目录</span></span><br><span class="line">mkdir -pv /data/mysql/mysql3376/&#123;data,logs,tmp&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="修改数据目录的所有者、组为mysql"><a href="#修改数据目录的所有者、组为mysql" class="headerlink" title="修改数据目录的所有者、组为mysql"></a>修改数据目录的所有者、组为mysql</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chown -R mysql:mysql /data/mysql</span><br></pre></td></tr></table></figure>
+<h2 id="添加、修改MySQL配置文件my-cnf"><a href="#添加、修改MySQL配置文件my-cnf" class="headerlink" title="添加、修改MySQL配置文件my.cnf"></a>添加、修改MySQL配置文件<code>my.cnf</code></h2><blockquote>
+<p>可下载使用本文提供的<code>my.cnf</code>：  </p>
+<blockquote>
+<p>链接：<a href="http://pan.baidu.com/s/1slP7LCx" target="_blank" rel="noopener">http://pan.baidu.com/s/1slP7LCx</a> 密码：7oib</p>
+</blockquote>
+<p>也可使用自己的<code>my.cnf</code></p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cp ./my.cnf /etc/</span><br></pre></td></tr></table></figure>
+<p>配置文件中的关键参数如下，其他见附件：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[client]</span><br><span class="line">port            = 3376</span><br><span class="line">socket          = /tmp/mysql3376.sock</span><br><span class="line"></span><br><span class="line"><span class="comment"># The MySQL server</span></span><br><span class="line">[mysqld]</span><br><span class="line">port            = 3376</span><br><span class="line">basedir         = /usr/<span class="built_in">local</span>/mysql</span><br><span class="line">datadir         = /data/mysql/mysql3376/data</span><br><span class="line">socket          = /tmp/mysql3376.sock</span><br></pre></td></tr></table></figure></p>
+<h2 id="初始化数据目录datadir"><a href="#初始化数据目录datadir" class="headerlink" title="初始化数据目录datadir"></a>初始化数据目录<code>datadir</code></h2><ul>
+<li>使用二进制包安装，和源码编译安装时，需要初始化数据目录</li>
+<li>一般情况下，仅在第一次安装MySQL时，需要初始化数据目录</li>
+<li>使用<code>mysql_install_db</code>进行初始化</li>
+<li>初始化数据目录时，不会覆盖已有的权限表信息和已有的数据</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 注意指定`user`参数值为`mysql`</span></span><br><span class="line"><span class="built_in">cd</span> /usr/<span class="built_in">local</span>/mysql</span><br><span class="line">./scripts/mysql_install_db --defaults-file=/etc/my.cnf --user=mysql</span><br></pre></td></tr></table></figure>
+<p>执行以上命令后，若出现类似于以下的输出，包含两个<code>OK</code>，则说明初始化成功。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Installing MySQL system tables...2016-06-20 23:39:36 0 [Note] ./bin/mysqld (mysqld 5.6.29-log) starting as process 1866 ...</span><br><span class="line">OK</span><br><span class="line"></span><br><span class="line">Filling <span class="built_in">help</span> tables...2016-06-20 23:39:43 0 [Note] ./bin/mysqld (mysqld 5.6.29-log) starting as process 1912 ...</span><br><span class="line">OK</span><br><span class="line"></span><br><span class="line">To start mysqld at boot time you have to copy</span><br><span class="line">support-files/mysql.server to the right place <span class="keyword">for</span> your system</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<h1 id="MySQL安装的后续设置"><a href="#MySQL安装的后续设置" class="headerlink" title="MySQL安装的后续设置"></a>MySQL安装的后续设置</h1><h2 id="添加系统环境变量"><a href="#添加系统环境变量" class="headerlink" title="添加系统环境变量"></a>添加系统环境变量</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 建议直接在 /etc/profile.d/ 目录新增 mysql.sh 文件设置环境变量，而不是直接在 /etc/profile 文件里添加环境变量</span></span><br><span class="line"><span class="comment"># 以免操作错误，清空了 /etc/profile，造成系统问题</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">"export PATH=\$PATH:/usr/local/mysql/bin"</span> &gt; /etc/profile.d/mysql.sh</span><br><span class="line"><span class="built_in">source</span> /etc/profile.d/mysql.sh</span><br></pre></td></tr></table></figure>
+<p>添加环境变量后，可以直接在系统任意位置运行<code>mysql</code>、<code>mysqld</code>等命令，而不用再在执行这些命令前，切换到MySQL安装目录<code>/usr/local/mysql/bin</code>。</p>
+<h2 id="添加自启动服务"><a href="#添加自启动服务" class="headerlink" title="添加自启动服务"></a>添加自启动服务</h2><blockquote>
+<p>实际生产环境不建议自启动MySQL  </p>
+<blockquote>
+<ul>
+<li>线上库本着一个原则，出错了就停下来，如果开自动启动，出现异常了就无法感知出来</li>
+<li>可以自己写脚本自动修复错误后，自动/批量启动</li>
+</ul>
+</blockquote>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /usr/<span class="built_in">local</span>/mysql</span><br><span class="line">cp ./support-files/mysql.server /etc/init.d/mysql</span><br><span class="line">chkconfig --add mysql</span><br><span class="line">chkconfig mysql on</span><br></pre></td></tr></table></figure>
+<h1 id="启动MySQL"><a href="#启动MySQL" class="headerlink" title="启动MySQL"></a>启动MySQL</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqld --user=mysql &amp;</span><br></pre></td></tr></table></figure>
+<ol>
+<li>若没有报错信息，则基本说明MySQL启动成功</li>
+<li><p>使用以下命令查看是否存在MySQL进程  </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ps aux | grep mysql</span><br></pre></td></tr></table></figure>
+<p>如下，存在mysqld进程，说明启动成功</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@node601 ~]<span class="comment"># ps aux | grep mysql</span></span><br><span class="line">mysql     1972  0.0  9.6 780496 48472 pts/1    Sl   14:56   0:00 mysqld --user=mysql</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>如果未启动成功，可查看错误日志里的<code>ERROR</code>信息，确认原因  </p>
+<ul>
+<li>错误日志默认在<code>datadir</code>文件夹，路径：<code>/data/mysql/mysql3376/data/</code></li>
+<li>错误日志默认名称为<code>`hostname`.error</code>，我的配置文件里指定了错误日志名称<code>log-error</code>为<code>error.log</code></li>
+</ul>
+</li>
+<li><p>MySQL启动不起来，很多时候是由于权限设置不当引起的，还有可能是以下一些原因：</p>
+<ol>
+<li><p>防火墙没有开启MySQL的端口，建议新手直接关闭防火墙</p>
+<ul>
+<li><p>CentOS 6 关闭iptables：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">service iptables stop</span><br><span class="line">chkconfig iptables off</span><br></pre></td></tr></table></figure>
+<p>检查iptables是否关闭自启动，如下全为off，则说明已关闭</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@node601 data]<span class="comment"># chkconfig --list iptables </span></span><br><span class="line">iptables           0:off    1:off    2:off    3:off    4:off    5:off    6:off</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>CentOS 7 关闭firewalld.service</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop firewalld.service</span><br><span class="line">systemctl <span class="built_in">disable</span> firewalld.service</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>selinux未关闭，需关闭selinux</p>
+<ol>
+<li>检查selinux是否关闭：<code>getenforce</code><br>输出结果若为<code>Enforcing</code>则说明未关闭；若为<code>Disabled</code>，则说明已关闭。</li>
+<li><p>临时关闭selinux（<em>重启后失效</em>）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">setenforce permissive</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>永久关闭selinux</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/sysconfig/selinux</span><br></pre></td></tr></table></figure>
+<p>修改<code>SELINUX=disabled</code></p>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<h1 id="测试MySQL"><a href="#测试MySQL" class="headerlink" title="测试MySQL"></a>测试MySQL</h1><h2 id="查看错误日志是不是有ERROE错误信息"><a href="#查看错误日志是不是有ERROE错误信息" class="headerlink" title="查看错误日志是不是有ERROE错误信息"></a>查看错误日志是不是有<code>ERROE</code>错误信息</h2><p>若没有<code>ERROR</code>，则说明启动正常（<em>搜索日志中是否存在<code>ERROR</code>字段</em>）</p>
+<h2 id="查看MySQL-Server的版本"><a href="#查看MySQL-Server的版本" class="headerlink" title="查看MySQL Server的版本"></a>查看MySQL Server的版本</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mysqladmin -u root -p version</span><br><span class="line"><span class="comment"># 没有设置root密码的话，可以直接使用以下命令查询</span></span><br><span class="line"><span class="comment"># mysqladmin version</span></span><br></pre></td></tr></table></figure>
+<p>输出信息如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">[root@node601 ~]<span class="comment"># mysqladmin version</span></span><br><span class="line">mysqladmin  Ver 8.42 Distrib 5.6.29, <span class="keyword">for</span> linux-glibc2.5 on x86_64</span><br><span class="line">Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.</span><br><span class="line"></span><br><span class="line">Oracle is a registered trademark of Oracle Corporation and/or its</span><br><span class="line">affiliates. Other names may be trademarks of their respective</span><br><span class="line">owners.</span><br><span class="line"></span><br><span class="line">Server version        5.6.29-log</span><br><span class="line">Protocol version    10</span><br><span class="line">Connection        Localhost via UNIX socket</span><br><span class="line">UNIX socket        /tmp/mysql3376.sock</span><br><span class="line">Uptime:            1 min 28 sec</span><br><span class="line"></span><br><span class="line">Threads: 1  Questions: 2  Slow queries: 0  Opens: 70  Flush tables: 1  Open tables: 63  Queries per second avg: 0.022</span><br></pre></td></tr></table></figure></p>
+<p>错误日志无<code>ERROR</code>信息，及以上命令输出信息正常，则说明MySQL已正常启动，MySQL连接正常。</p>
+<h2 id="关闭MySQL"><a href="#关闭MySQL" class="headerlink" title="关闭MySQL"></a>关闭MySQL</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mysqladmin -vvv shutdown</span><br><span class="line"><span class="comment"># 指定socket</span></span><br><span class="line"><span class="comment"># mysqladmin -vvv -S /tmp/mysql3376.sock shutdown</span></span><br></pre></td></tr></table></figure>
+<p>输出如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@node601 data]<span class="comment"># mysqladmin -vvv shutdown</span></span><br><span class="line">Shutdown signal sent to server;  Waiting <span class="keyword">for</span> pid file to disappear</span><br></pre></td></tr></table></figure></p>
+<h1 id="巩固MySQL安全"><a href="#巩固MySQL安全" class="headerlink" title="巩固MySQL安全"></a>巩固MySQL安全</h1><p>MySQL安装后，需要执行以下操作，来增强数据库的安全性</p>
+<ol>
+<li>删除匿名用户</li>
+<li>移除任何人都可以访问<code>test</code>及<code>test_</code>开头的库的授权</li>
+<li>删除test库</li>
+<li>设置root密码</li>
+</ol>
+<p>可以通过使用以下命令，自动执行以上操作：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 需要先启动MySQL</span></span><br><span class="line">mysqld --user=mysql &amp;</span><br><span class="line"><span class="comment"># 由于只能使用默认的socket '/tmp/mysql.sock'连接server，无法使用自定义路径的/tmp/mysql3376.sock</span></span><br><span class="line"><span class="comment"># 所以先新建一个软链接至/tmp/mysql3376.sock，再执行mysql_secure_installation</span></span><br><span class="line">ln -s /tmp/mysql3376.sock /tmp/mysql.sock</span><br><span class="line">mysql_secure_installation</span><br><span class="line"><span class="comment"># 执行完，再删除掉软链接</span></span><br><span class="line">rm -f /tmp/mysql.sock</span><br></pre></td></tr></table></figure></p>
+<h1 id="附件"><a href="#附件" class="headerlink" title="附件"></a>附件</h1><p>可以从以下百度网盘分享，下载以下列出的文件，上传到服务器的同一个目录，执行以下命令，进行一键安装和初始化。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> install_mysql.sh</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>链接：<a href="http://pan.baidu.com/s/1i5Jc0Qx" target="_blank" rel="noopener">http://pan.baidu.com/s/1i5Jc0Qx</a> ，密码：6xxr</li>
+</ul>
+<p>文件列表：</p>
+<ol>
+<li>MySQL二进制安装包<code>mysql-5.6.29-linux-glibc2.5-x86_64.tar.gz</code></li>
+<li>MySQL配置文件<code>my.cnf</code></li>
+<li>安装脚本<code>install_mysql.sh</code></li>
+</ol>
+<h1 id="声明"><a href="#声明" class="headerlink" title="声明"></a>声明</h1><p>本文部分内容来自<strong>知数堂远程培训：</strong><a href="https://zhishuedu.taobao.com/" target="_blank" rel="noopener">https://zhishuedu.taobao.com/</a></p>
+
+      
+    </div>
+
+    
+      
+
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\03\migrate_mysql_to_mariadb\" rel="bookmark">MySQL迁移到MariaDB</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\06\mysql_server_startup_programs_and_mutiple_mysql_instances\" rel="bookmark">MySQL启动方式及多实例</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\09\how_to_deal_with_xtrabackup_error_log_block_numbers_mismatch\" rel="bookmark">XtraBackup error：log block numbers mismatch分析处理</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/static/other_images/wechat_pay-tyoung.png" alt="Tyoung WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/static/other_images/alipay-tyoung.png" alt="Tyoung Alipay">
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author: </strong>Tyoung</li>
+  <li class="post-copyright-link">
+    <strong>Post link:</strong>
+    <a href="https://db.tyoung.me/2016/06/install_and_initialize_mysql/" title="MySQL安装和初始化">https://db.tyoung.me/2016/06/install_and_initialize_mysql/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+            <a href="/tags/MySQL安装/" rel="tag"># MySQL安装</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/03/migrate_mysql_to_mariadb/" rel="next" title="MySQL迁移到MariaDB">
+                <i class="fa fa-chevron-left"></i> MySQL迁移到MariaDB
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/06/mysql_server_startup_programs_and_mutiple_mysql_instances/" rel="prev" title="MySQL启动方式及多实例">
+                MySQL启动方式及多实例 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/static/other_images/avatar.jpg" alt="Tyoung">
+            
+              <p class="site-author-name" itemprop="name">Tyoung</p>
+              <p class="site-description motion-element" itemprop="description">纸上得来终觉浅，绝知此事要躬行。</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">15</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/tyoungcn" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.linkedin.com/in/tyoungcn" target="_blank" title="LinkedIn"><i class="fa fa-fw fa-linkedin-square"></i>LinkedIn</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#系统详情"><span class="nav-number">1.</span> <span class="nav-text">系统详情</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装方法介绍"><span class="nav-number">2.</span> <span class="nav-text">安装方法介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#下载MySQL二进制包"><span class="nav-number">3.</span> <span class="nav-text">下载MySQL二进制包</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#下载链接"><span class="nav-number">3.1.</span> <span class="nav-text">下载链接</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下载MySQL"><span class="nav-number">3.2.</span> <span class="nav-text">下载MySQL</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#安装MySQL，及进行初始化"><span class="nav-number">4.</span> <span class="nav-text">安装MySQL，及进行初始化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#新建程序安装目录"><span class="nav-number">4.1.</span> <span class="nav-text">新建程序安装目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解压安装包至安装目录"><span class="nav-number">4.2.</span> <span class="nav-text">解压安装包至安装目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#新建软链接mysql，链接至mysql-5-6-29-linux-glibc2-5-x86-64目录"><span class="nav-number">4.3.</span> <span class="nav-text">新建软链接mysql，链接至mysql-5.6.29-linux-glibc2.5-x86_64目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#新建mysql用户和组"><span class="nav-number">4.4.</span> <span class="nav-text">新建mysql用户和组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#新建MySQL数据、日志、tmp目录"><span class="nav-number">4.5.</span> <span class="nav-text">新建MySQL数据、日志、tmp目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#修改数据目录的所有者、组为mysql"><span class="nav-number">4.6.</span> <span class="nav-text">修改数据目录的所有者、组为mysql</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#添加、修改MySQL配置文件my-cnf"><span class="nav-number">4.7.</span> <span class="nav-text">添加、修改MySQL配置文件my.cnf</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初始化数据目录datadir"><span class="nav-number">4.8.</span> <span class="nav-text">初始化数据目录datadir</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MySQL安装的后续设置"><span class="nav-number">5.</span> <span class="nav-text">MySQL安装的后续设置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#添加系统环境变量"><span class="nav-number">5.1.</span> <span class="nav-text">添加系统环境变量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#添加自启动服务"><span class="nav-number">5.2.</span> <span class="nav-text">添加自启动服务</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#启动MySQL"><span class="nav-number">6.</span> <span class="nav-text">启动MySQL</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#测试MySQL"><span class="nav-number">7.</span> <span class="nav-text">测试MySQL</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#查看错误日志是不是有ERROE错误信息"><span class="nav-number">7.1.</span> <span class="nav-text">查看错误日志是不是有ERROE错误信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查看MySQL-Server的版本"><span class="nav-number">7.2.</span> <span class="nav-text">查看MySQL Server的版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关闭MySQL"><span class="nav-number">7.3.</span> <span class="nav-text">关闭MySQL</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#巩固MySQL安全"><span class="nav-number">8.</span> <span class="nav-text">巩固MySQL安全</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#附件"><span class="nav-number">9.</span> <span class="nav-text">附件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#声明"><span class="nav-number">10.</span> <span class="nav-text">声明</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2015 &mdash; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-database"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Tyoung</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.0.6"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.0.6"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.0.6"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.0.6"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+    <script id="dsq-count-scr" src="https://tyoungcn.disqus.com/count.js" async></script>
+  
+
+  
+    <script type="text/javascript">
+      var disqus_config = function () {
+        this.page.url = 'https://db.tyoung.me/2016/06/install_and_initialize_mysql/';
+        this.page.identifier = '2016/06/install_and_initialize_mysql/';
+        this.page.title = 'MySQL安装和初始化';
+      };
+      function loadComments () {
+        var d = document, s = d.createElement('script');
+        s.src = 'https://tyoungcn.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      }
+      
+        $(function () {
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          if (offsetTop <= 0) {
+            // load directly when there's no a scrollbar
+            loadComments();
+          } else {
+            $(window).on('scroll.disqus_scroll', function () {
+              var scrollTop = document.documentElement.scrollTop;
+              if (scrollTop >= offsetTop) {
+                $(window).off('.disqus_scroll');
+                loadComments();
+              }
+            });
+          }
+        });
+      
+    </script>
+  
+
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/algolia-instant-search/instantsearch.min.css">
+
+  
+  
+  <script src="/lib/algolia-instant-search/instantsearch.min.js"></script>
+  
+
+  <script src="/js/src/algolia-search.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

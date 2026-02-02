@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="en">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.0.6" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32-next.png?v=6.0.6">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16-next.png?v=6.0.6">
+
+
+  <link rel="mask-icon" href="/logo.svg?v=6.0.6" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.0.6',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '65YBN7EK61',
+      apiKey: '249c071ab47e1ab1c0d5c9c8930a9aba',
+      indexName: 'db.tyoung.me',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="问题场景系统环境测试环境：  OS: CentOS 7 DB Version: MariaDB 10.0.23 PT Version: pt-table-checksum 2.2.18 主从环境 Master: 192.168.0.17:53309 Slave: 192.168.0.18:3309    问题在使用pt-table-checksum配置主从校验的时候，本地和生产环境都可以正常校验，">
+<meta name="keywords" content="MySQL,Percona Toolkit,pt-table-checksum,主从一致性校验,DSN">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pt-table-checksum使用dsn方式连接检测从库">
+<meta property="og:url" content="https://db.tyoung.me/2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/index.html">
+<meta property="og:site_name" content="Tyoung&#39;s Blog">
+<meta property="og:description" content="问题场景系统环境测试环境：  OS: CentOS 7 DB Version: MariaDB 10.0.23 PT Version: pt-table-checksum 2.2.18 主从环境 Master: 192.168.0.17:53309 Slave: 192.168.0.18:3309    问题在使用pt-table-checksum配置主从校验的时候，本地和生产环境都可以正常校验，">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2020-04-21T15:15:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="pt-table-checksum使用dsn方式连接检测从库">
+<meta name="twitter:description" content="问题场景系统环境测试环境：  OS: CentOS 7 DB Version: MariaDB 10.0.23 PT Version: pt-table-checksum 2.2.18 主从环境 Master: 192.168.0.17:53309 Slave: 192.168.0.18:3309    问题在使用pt-table-checksum配置主从校验的时候，本地和生产环境都可以正常校验，">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Tyoung's Blog" type="application/atom+xml">
+
+
+
+
+  <link rel="canonical" href="https://db.tyoung.me/2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>pt-table-checksum使用dsn方式连接检测从库 | Tyoung's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"> 
+
+<div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Tyoung's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">DBA之路</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+          
+  <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives</a>
+</li>
+
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  
+  <div class="algolia-popup popup search-popup">
+    <div class="algolia-search">
+      <div class="algolia-search-input-icon">
+        <i class="fa fa-search"></i>
+      </div>
+      <div class="algolia-search-input" id="algolia-search-input"></div>
+    </div>
+
+    <div class="algolia-results">
+      <div id="algolia-stats"></div>
+      <div id="algolia-hits"></div>
+      <div id="algolia-pagination" class="algolia-pagination"></div>
+    </div>
+
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+  </div>
+
+
+
+
+    </div>
+  
+</nav>
+
+
+  
+
+
+
+ </div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://db.tyoung.me/2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Tyoung">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/static/other_images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Tyoung's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">pt-table-checksum使用dsn方式连接检测从库</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2016-09-22T01:44:22+08:00">2016-09-22</time>
+            
+
+            
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="问题场景"><a href="#问题场景" class="headerlink" title="问题场景"></a>问题场景</h1><h2 id="系统环境"><a href="#系统环境" class="headerlink" title="系统环境"></a>系统环境</h2><p>测试环境：</p>
+<ul>
+<li>OS: CentOS 7</li>
+<li>DB Version: MariaDB 10.0.23</li>
+<li>PT Version: pt-table-checksum 2.2.18</li>
+<li>主从环境<ul>
+<li>Master: 192.168.0.17:53309</li>
+<li>Slave: 192.168.0.18:3309</li>
+</ul>
+</li>
+</ul>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>在使用pt-table-checksum配置主从校验的时候，本地和生产环境都可以正常校验，而在测试环境校验的时候，却输出以下警告信息：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Cannot connect to h=192.168.0.18,p=...,u=pt_table_check</span><br><span class="line">Diffs cannot be detected because no slaves were found.  Please <span class="built_in">read</span> the --recursion-method documentation <span class="keyword">for</span> information.</span><br></pre></td></tr></table></figure></p>
+<p>pt-table-checksum无法连接从库。<br>由于没有发现从库，数据校验时无法实时检测从库与主库的数据是否一致（<code>DIFFS</code>列始终为<code>0</code>），需要通过<code>--recursion-method</code>选项指定其他的方式来搜索、连接从库（此处<code>--recursion-method</code>使用的是默认值<code>processlist,hosts</code>）。</p>
+<a id="more"></a>
+<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>执行的详细命令及输出如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">shell&gt; ./bin/pt-table-checksum --socket=/var/lib/mysql/mysql.sock --user=pt_table_check --password=<span class="string">'checksum123'</span> --tables=road_to_dba.test1 --replicate=percona_schema.checksums --no-check-binlog-format --no-check-replication-filters</span><br><span class="line"></span><br><span class="line">Cannot connect to h=192.168.0.18,p=...,u=pt_table_check</span><br><span class="line">Diffs cannot be detected because no slaves were found.  Please <span class="built_in">read</span> the --recursion-method documentation <span class="keyword">for</span> information.</span><br><span class="line">            TS ERRORS  DIFFS     ROWS  CHUNKS SKIPPED    TIME TABLE</span><br><span class="line">09-21T20:57:37      0      0      972       1       0   0.033 road_to_dba.test1</span><br></pre></td></tr></table></figure></p>
+<p>虽然在校验时pt-table-checksum没有连接到从库，但校验能够在主库正常运行，而且能够通过复制传递到从库。校验完成后，在从库也可以通过checksums表查询到数据校验不一致的表信息。</p>
+<p>本着严(qiang)谨(po)的(zheng)态度，决定还是对于上述警告信息彻底解决掉。经过分析，具体<strong>原因如下</strong>：</p>
+<ul>
+<li>默认情况下，pt-table-checksum使用的从库连接参数，是从主库的连接参数继承而来的，包括用户名（<code>--user</code>）、密码（<code>--password</code>）、端口（<code>--port</code>）等。</li>
+<li>在本次校验中，没有显式指定从库的用户名（<code>--slave-user</code>），密码（<code>--slave-password</code>），及端口。</li>
+<li>所以，在没有显式指定从库的连接参数的情况下，<strong>默认是，主库和从库的用户名、密码、端口是相同的</strong>；但是在我的<strong>测试环境中，主从环境的端口是不同的</strong>。所以导致pt-table-checksum虽然搜索到了从库，但是无法连接从库（<code>Cannot connect to h=192.168.0.18,p=...,u=pt_table_check</code>），紧接着报没有发现从库的错误。</li>
+</ul>
+<p>由于pt-table-checksum没有参数可以用来指定从库的端口，所以使用dsn方式来指定从库的连接信息（<code>--recursion-method dsn=D=percona,t=dsns,h=host,P=3309,u=username,p=passwd</code>）。</p>
+<h1 id="dsn是什么"><a href="#dsn是什么" class="headerlink" title="dsn是什么"></a>dsn是什么</h1><p>首先介绍俩名词：</p>
+<ul>
+<li>dsn方法：<code>dsn</code>是参数<code>--recursion-method</code>的一个<strong>参数值</strong>。注意是dsn，不是dns…</li>
+<li>DSN：<code>DSN</code>，即DATA SOURCE NAME，数据源名称。<code>DSN</code>包含从库的各个连接参数（<code>user</code>、<code>password</code>、<code>port</code>等），由逗号分隔的多个<code>option=value</code>字符串组成。<br>如：<code>h=host,P=3309,u=username,p=passwd</code>。</li>
+</ul>
+<p>dsn方法是指将从库的DSN信息存储在表（DSN表）里，然后将该表和DSN信息赋值给dsn，作为<code>--recursion-method</code>的参数值。<br>格式如：<code>--recursion-method dsn=D=percona,t=dsns,h=host,P=3309,u=username,p=passwd</code>。</p>
+<p>当指定pt-table-checksum的<code>--recursion-method</code>参数值为dsn时，它只会连接和检测这些指定的从库。当从库的MySQL用户名、密码、端口与主库不相同时，也可以通过dsn的方式来指定。</p>
+<p>DSN的部分选项如下：</p>
+<blockquote>
+<ul>
+<li>D<br>DSN表所在的数据库名。</li>
+<li>h<br>从库的host。</li>
+<li>p<br>小写p，从库的密码。当密码包括逗号（<code>,</code>）时，需要使用反斜杠转义。</li>
+<li>P<br>大写P，从库的端口。</li>
+<li>S<br>连接使用的socket文件。</li>
+<li>t<br>存储DSN信息的DSN表名。</li>
+<li>u<br>从库的MySQL用户名。</li>
+</ul>
+</blockquote>
+<p>每一个选项和其值的形式为<code>option=value</code>，<code>=</code>的前后不能空格，如果选项值有空格，则必须使用引号引起来。</p>
+<p>将DSN作为<code>--recursion-method</code>的参数值时，必须包含<code>D</code>和<code>t</code>选项；或者只包含<code>t</code>选项，同时DSN表指定数据库前缀（如<code>percona.dsns</code>）。</p>
+<p>DSN表结构如下：<br><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`dsns`</span> (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> AUTO_INCREMENT,</span><br><span class="line">  <span class="string">`parent_id`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`dsn`</span> <span class="built_in">varchar</span>(<span class="number">255</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`id`</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure></p>
+<p>存储在表中的DSNs以<code>id</code>值排序，但是这里可以忽略<code>id</code>和<code>parent_id</code>列，只需将从库的DSN信息存储在<code>dsn</code>列即可。存储的DSN格式如前面在命令行上指定DSN一样，如：<code>h=host,P=3309,u=username,p=passwd</code>。</p>
+<p>DSN的详细介绍可参考Percona官方文档：<a href="https://www.percona.com/doc/percona-toolkit/2.2/dsn_data_source_name_specifications.html" target="_blank" rel="noopener">https://www.percona.com/doc/percona-toolkit/2.2/dsn_data_source_name_specifications.html</a></p>
+<h1 id="解决问题"><a href="#解决问题" class="headerlink" title="解决问题"></a>解决问题</h1><p>上面绕的有点晕。。。其实只需要知道如何使用dsn指定从库连接信息即可。</p>
+<p>下面通过指定<code>--recursion-method</code>为dsn的方式，解决测试环境在数据校验时无法连接从库的问题。</p>
+<ol>
+<li><p>在主库新建DSN表</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">  <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`percona_schema.dsns`</span> (</span><br><span class="line">    <span class="string">`id`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> AUTO_INCREMENT,</span><br><span class="line">    <span class="string">`parent_id`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span>,</span><br><span class="line">    <span class="string">`dsn`</span> <span class="built_in">varchar</span>(<span class="number">255</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">    PRIMARY <span class="keyword">KEY</span> (<span class="string">`id`</span>)</span><br><span class="line">  );</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>这里为了测试，和主库的MySQL账号区分开，新建了一个账号<code>pt_table_check2</code>专用于连接从库<br>主库账号是<code>pt_table_check</code></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">  <span class="keyword">GRANT</span> <span class="keyword">SELECT</span>, PROCESS, SUPER, <span class="keyword">REPLICATION</span> <span class="keyword">SLAVE</span> <span class="keyword">ON</span> *.* <span class="keyword">TO</span> pt_table_check2@<span class="string">'192.168.0.%'</span> <span class="keyword">IDENTIFIED</span> <span class="keyword">BY</span> <span class="string">'checksum123'</span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>将从库的DSN信息写入DSN表</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">  <span class="keyword">INSERT</span> <span class="keyword">INTO</span> percona_schema.dsns(dsn) <span class="keyword">VALUES</span> (<span class="string">"h=192.168.0.18,P=3309,u=pt_table_check2,p=checksum123"</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>在主库使用dsn方式，重新运行pt-table-checksum进行校验</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">  shell&gt; ./bin/pt-table-checksum --socket=/var/lib/mysql/mysql.sock --user=pt_table_check --password=<span class="string">'checksum123'</span> --tables=road_to_dba.test1 --replicate=percona_schema.checksums --no-check-binlog-format --no-check-replication-filters --recursion-method dsn=t=percona_schema.dsns,h=192.168.0.18,P=3309,u=pt_table_check2,p=checksum123</span><br><span class="line">  </span><br><span class="line">               TS ERRORS  DIFFS     ROWS  CHUNKS SKIPPED    TIME TABLE</span><br><span class="line">  09-21T21:22:30      0      1      972       1       0   0.273 road_to_dba.test1</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>从第4步可以看到，pt-table-checksum已经能够检测到从库，并且检测到主从数据不一致（<code>DIFFS = 1</code>）。<br>问题解决。</p>
+<h1 id="无法连接-检测从库的影响"><a href="#无法连接-检测从库的影响" class="headerlink" title="无法连接/检测从库的影响"></a>无法连接/检测从库的影响</h1><p>虽然在使用pt-table-checksum时，如果无法连接/检测到从库，仍可以完成主从一致性校验。但是，这样可能会产生一些其他的问题，如下：</p>
+<ol>
+<li>pt-table-checksum在执行校验时，无法实时检测主从的数据是否一致。即，输出的<code>DIFFS</code>列始终为0。</li>
+<li>无法检测到从库是否有使用复制过滤，可能会造成从库复制卡住。</li>
+<li>当某个表在主库上作为一个分块进行校验时，无法检测其在从库的数据量，当该表在从库的数据量很大时，会造成从库负载过高。</li>
+<li>无法检测到从库的复制延迟状态，造成从库复制延迟过大。</li>
+</ol>
+
+      
+    </div>
+
+    
+      
+
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\09\usage_of_pt-table-checksum_and_replication_consistency_check\" rel="bookmark">pt-table-checksum使用方法及主从一致性校验</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\09\how_to_deal_with_xtrabackup_error_log_block_numbers_mismatch\" rel="bookmark">XtraBackup error：log block numbers mismatch分析处理</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\2016\03\migrate_mysql_to_mariadb\" rel="bookmark">MySQL迁移到MariaDB</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>Donate</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/static/other_images/wechat_pay-tyoung.png" alt="Tyoung WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/static/other_images/alipay-tyoung.png" alt="Tyoung Alipay">
+        <p>Alipay</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author: </strong>Tyoung</li>
+  <li class="post-copyright-link">
+    <strong>Post link:</strong>
+    <a href="https://db.tyoung.me/2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/" title="pt-table-checksum使用dsn方式连接检测从库">https://db.tyoung.me/2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+            <a href="/tags/Percona-Toolkit/" rel="tag"># Percona Toolkit</a>
+          
+            <a href="/tags/pt-table-checksum/" rel="tag"># pt-table-checksum</a>
+          
+            <a href="/tags/主从一致性校验/" rel="tag"># 主从一致性校验</a>
+          
+            <a href="/tags/DSN/" rel="tag"># DSN</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/09/usage_of_pt-table-checksum_and_replication_consistency_check/" rel="next" title="pt-table-checksum使用方法及主从一致性校验">
+                <i class="fa fa-chevron-left"></i> pt-table-checksum使用方法及主从一致性校验
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/11/enable_tokudb_for_mariadb/" rel="prev" title="MariaDB开启TokuDB存储引擎">
+                MariaDB开启TokuDB存储引擎 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/static/other_images/avatar.jpg" alt="Tyoung">
+            
+              <p class="site-author-name" itemprop="name">Tyoung</p>
+              <p class="site-description motion-element" itemprop="description">纸上得来终觉浅，绝知此事要躬行。</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">15</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/tyoungcn" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.linkedin.com/in/tyoungcn" target="_blank" title="LinkedIn"><i class="fa fa-fw fa-linkedin-square"></i>LinkedIn</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#问题场景"><span class="nav-number">1.</span> <span class="nav-text">问题场景</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#系统环境"><span class="nav-number">1.1.</span> <span class="nav-text">系统环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题"><span class="nav-number">1.2.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原因"><span class="nav-number">1.3.</span> <span class="nav-text">原因</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#dsn是什么"><span class="nav-number">2.</span> <span class="nav-text">dsn是什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解决问题"><span class="nav-number">3.</span> <span class="nav-text">解决问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#无法连接-检测从库的影响"><span class="nav-number">4.</span> <span class="nav-text">无法连接/检测从库的影响</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2015 &mdash; <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-database"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Tyoung</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.0.6"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.0.6"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.0.6"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.0.6"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.0.6"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+    <script id="dsq-count-scr" src="https://tyoungcn.disqus.com/count.js" async></script>
+  
+
+  
+    <script type="text/javascript">
+      var disqus_config = function () {
+        this.page.url = 'https://db.tyoung.me/2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/';
+        this.page.identifier = '2016/09/use_dsn_method_to_connect_and_check_replicas_when_using_pt-table-checksum/';
+        this.page.title = 'pt-table-checksum使用dsn方式连接检测从库';
+      };
+      function loadComments () {
+        var d = document, s = d.createElement('script');
+        s.src = 'https://tyoungcn.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      }
+      
+        $(function () {
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          if (offsetTop <= 0) {
+            // load directly when there's no a scrollbar
+            loadComments();
+          } else {
+            $(window).on('scroll.disqus_scroll', function () {
+              var scrollTop = document.documentElement.scrollTop;
+              if (scrollTop >= offsetTop) {
+                $(window).off('.disqus_scroll');
+                loadComments();
+              }
+            });
+          }
+        });
+      
+    </script>
+  
+
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/algolia-instant-search/instantsearch.min.css">
+
+  
+  
+  <script src="/lib/algolia-instant-search/instantsearch.min.js"></script>
+  
+
+  <script src="/js/src/algolia-search.js?v=6.0.6"></script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
